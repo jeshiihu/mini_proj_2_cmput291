@@ -1,22 +1,38 @@
 # Mini Project 2
 import os.path
 import re
+import sqlite3
 
-def connectToInputDB():
-	dbFile = raw_input("Please enter an input database (name.db): ")
+from databaseHelpers import *
 
-	# check if file exits
-	if (not os.path.isfile(dbFile)) and (not re.match(".+\\.db", dbFile)):
-		print "Invalid filename, please try again!"
-		connectToInputDB()
+def promptAction(conn, c):
+	print "Please select an action you wish to perform..."
+	print "	[0] Display all database schemas"
+	print "	[1] Synthesize table to 3NF"
+	print "	[2] Decompose table to BCNF"
+	print "	[-quit] Quit program"
+	action = raw_input("action: ")
 
-	print "Its a valid file..."
+	if(action == str(0)):
+		displayDatabaseSchema(conn, c)
+	elif(action == str(1)):
+		synthesizeTo3NF(conn, c)
+	elif(action == str(2)):
+		decomposeToBCNF(conn, c)
+	elif(action == "-quit"):
+		exit
+	else:
+		print "Invalid action. Please try again!"
+		promptAction(conn, c)
 
 
 def main():
-	print "Cmput 291: Mini Project 2"
+	print "Welcome to the Cmput 291: Mini Project 2!"
 
-	connectToInputDB()
+	filename = getDBFile()
+	conn, c = getConnectionCursor(filename)
+
+	promptAction(conn, c)
 
 
 
