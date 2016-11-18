@@ -37,7 +37,11 @@ def getConnectionCursor(filename):
 	return conn, c
 
 def displayDatabaseSchema(conn, c):
-	print "In display db schema"
+	c.execute("SELECT name FROM sqlite_master WHERE type='table';")
+	results = c.fetchall()
+
+	for i in results:
+		print i
 
 def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"
