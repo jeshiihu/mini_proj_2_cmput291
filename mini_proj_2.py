@@ -1,30 +1,24 @@
 # Mini Project 2
-import os.path
-import re
 import sqlite3
 
 from databaseHelpers import *
 
 def promptAction(conn, c):
 	print "Please select an action you wish to perform..."
-	print "	[0] Display all database schemas"
-	print "	[1] Synthesize table to 3NF"
-	print "	[2] Decompose table to BCNF"
+	print "	[0] Synthesize table to 3NF"
+	print "	[1] Decompose table to BCNF"
 	print "	[-quit] Quit program"
 	action = raw_input("action: ")
 
 	if(action == str(0)):
-		displayDatabaseSchema(conn, c)
-	elif(action == str(1)):
 		synthesizeTo3NF(conn, c)
-	elif(action == str(2)):
+	elif(action == str(1)):
 		decomposeToBCNF(conn, c)
 	elif(action == "-quit"):
-		exit
+		exit()
 	else:
 		print "Invalid action. Please try again!"
 		promptAction(conn, c)
-
 
 def main():
 	print "Welcome to the Cmput 291: Mini Project 2!"

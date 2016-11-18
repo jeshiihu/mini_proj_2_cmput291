@@ -2,16 +2,23 @@ import os.path
 import re
 import sqlite3
 
+def strStripLower(str):
+	str = str.strip()
+	str = str.lower()
+	return str
+
+
 def getDBFile():
 	dbFile = raw_input("Please enter an input database (name.db): ")
+	dbFile = strStripLower(dbFile)
 
 	# check if file exits
 	if dbFile == "-quit":
 		exit()
 
-	if (not os.path.isfile(dbFile)) and (not re.match(".+\\.db", dbFile)):
+	if not os.path.isfile(dbFile) or not re.match(".+\\.db", dbFile):
 		print "Invalid filename, please try again!"
-		getDBFile() # while loop
+		getDBFile()
 
 	return dbFile
 
@@ -35,13 +42,6 @@ def getConnectionCursor(filename):
 	conn.row_factory = sqlite3.Row
 	c = conn.cursor()
 	return conn, c
-
-def displayDatabaseSchema(conn, c):
-	c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-	results = c.fetchall()
-
-	for i in results:
-		print i
 
 def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"
