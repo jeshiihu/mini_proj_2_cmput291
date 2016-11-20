@@ -1,6 +1,7 @@
 import os.path
 import re
 import sqlite3
+from schema3nf import *
 
 def strStripLower(str):
 	str = str.strip()
@@ -45,6 +46,7 @@ def getConnectionCursor(filename):
 
 def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"
+	computMinimalCover()
 
 def decomposeToBCNF(conn, c):
 	print "In decompose BCNF"
