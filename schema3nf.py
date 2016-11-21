@@ -51,6 +51,36 @@ def getClosure(lhs, fdSet):
 	else:
 		return getClosure(closure, fdSet)
 
+def removeLhsRedundantAttr(fdSet):
+	# 2. Elimate redundant attribute from LHS
+	# print "=== Before eliminating redundant attr form LHS ==="
+	# for fd in fdSet: # keys = LHS
+	# 	print fd
+	tempSet = set()
+	for fd in fdSet:
+		if ',' in fd[0]: # possible redundancy
+
+			redundantAttr = set()
+			for c in fd[0].split(','):
+				templhs = fd[0].split(',')
+				templhs.remove(c) #temporarily remove from LHS
+
+				closure = getClosure(templhs, fdSet)
+				if fd[1] in closure: # then we know that single attribute is redundant
+					# print c + " is redundant in " + fd[0] + " --> " + fd[1]
+					redundantAttr.add(c)
+			
+			lhs = fd[0].split(',')
+			for c in redundantAttr: # we got a redundant values
+				lhs.remove(c)
+			
+			tempSet.add((''.join(lhs), fd[1]))
+				# check if we can get a closure that gets us the rhs
+		else:
+			tempSet.add(fd)
+
+	return tempSet
+
 def computeMinimalCover(conn, c):
 	print "Computing minimal cover"
 
@@ -69,34 +99,14 @@ def computeMinimalCover(conn, c):
 			tempSet.add(fd)
 	fdSet = tempSet
 
-	# 2. Elimate redundant attribute from LHS
-	print "=== Before eliminating redundant attr form LHS ==="
-	for fd in fdSet: # keys = LHS
-		print fd
-
-	tempSet = set()
-	for fd in fdSet:
-		if ',' in fd[0]: # possible redundancy
-
-			redundantAttr = set()
-			for c in fd[0].split(','):
-				templhs = fd[0].split(',')
-				templhs.remove(c) #temporarily remove from LHS
-
-				closure = getClosure(templhs, fdSet)
-				if fd[1] in closure: # then we know that single attribute is redundant
-					print c + " is redundant in " + fd[0] + " --> " + fd[1]
-					redundantAttr.add(c)
-			
-			lhs = fd[0].split(',')
-			for c in redundantAttr: # we got a redundant values
-				lhs.remove(c)
-			
-			tempSet.add((''.join(lhs), fd[1]))
-				# check if we can get a closure that gets us the rhs
+	# this ensures that we loop through each time until nor more redundancies are found!
+	while(1):
+		newFdSet = removeLhsRedundantAttr(fdSet)
+		if not fdSet == newFdSet: # got new fd set must check that one for redundancies
+			fdSet = newFdSet
 		else:
-			tempSet.add(fd)
-	fdSet = tempSet
+			fdSet = newFdSet 
+			break;
 
 	print "=== after eliminating redundant attr form LHS ==="
 	for fd in fdSet: # keys = LHS
