@@ -29,6 +29,19 @@ def getFDSet(conn, c, tableName):
 
 	return fdSet
 
+# =================================== 1. make the RHS of each FD into a single attribute ===================================
+def makeRHSToSingleAttr(fdSet):
+	tempSet = set()
+	for fd in fdSet:
+		if "," in fd[1]:
+			rhsList = fd[1].split(',')
+			for c in rhsList:
+				tempSet.add((fd[0],c))
+		else:
+			tempSet.add(fd)
+
+	return tempSet
+
 def getClosure(lhs, fdSet):
 	# working with sets, so no need to worry about duplicates
 	closure = set(lhs) # eg. BH+ = BH
@@ -51,11 +64,8 @@ def getClosure(lhs, fdSet):
 	else:
 		return getClosure(closure, fdSet)
 
+# =================================== # 2. Elimate redundant attribute from LHS ===================================
 def removeLhsRedundantAttr(fdSet):
-	# 2. Elimate redundant attribute from LHS
-	# print "=== Before eliminating redundant attr form LHS ==="
-	# for fd in fdSet: # keys = LHS
-	# 	print fd
 	tempSet = set()
 	for fd in fdSet:
 		if ',' in fd[0]: # possible redundancy
@@ -79,7 +89,28 @@ def removeLhsRedundantAttr(fdSet):
 		else:
 			tempSet.add(fd)
 
-	return tempSet
+	if(fdSet == tempSet): # eliminated all redundant LHS attributes
+		return tempSet
+	else:
+		return removeLhsRedundantAttr(tempSet)
+
+# =================================== 3. Delete redundant FDs ===================================
+def removeRedundantFds(fdSet):
+	newFDSet = set()
+	for fd in fdSet:
+		tempFdSet = set(fdSet)
+		tempFdSet.remove(fd)
+
+		lhs = fd[0].split(',')
+		closure = getClosure(lhs, tempFdSet)
+		
+		if not fd[1] in closure: # not redundant
+			newFDSet.add(fd)
+
+	if(fdSet == newFDSet): # if we have cleaned up all redundant!
+		return newFDSet
+	else:
+		return removeRedundantFds(newFDSet)
 
 def computeMinimalCover(conn, c):
 	print "Computing minimal cover"
@@ -88,31 +119,13 @@ def computeMinimalCover(conn, c):
 	fdTableName = getFDTableName(conn, c)
 	fdSet = getFDSet(conn, c, fdTableName)
 
-	# 1. make the RHS of each FD into a single attribute
-	tempSet = set()
-	for fd in fdSet:
-		if "," in fd[1]:
-			rhsList = fd[1].split(',')
-			for c in rhsList:
-				tempSet.add((fd[0],c))
-		else:
-			tempSet.add(fd)
-	fdSet = tempSet
+	minimalCover = makeRHSToSingleAttr(fdSet)
+	minimalCover = removeLhsRedundantAttr(minimalCover)
+	minimalCover = removeRedundantFds(minimalCover)
 
-	# this ensures that we loop through each time until nor more redundancies are found!
-	while(1):
-		newFdSet = removeLhsRedundantAttr(fdSet)
-		if not fdSet == newFdSet: # got new fd set must check that one for redundancies
-			fdSet = newFdSet
-		else:
-			fdSet = newFdSet 
-			break;
+	return minimalCover
 
-	print "=== after eliminating redundant attr form LHS ==="
-	for fd in fdSet: # keys = LHS
-		print fd
 
-	# 3. Delete redundant FDs
 
 
 
