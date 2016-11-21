@@ -49,7 +49,9 @@ def synthesizeTo3NF(conn, c):
 
 	# returns a set of (LHS, RHS)
 	minimalCover = computeMinimalCover(conn, c)
-	for fd in minimalCover: # keys = LHS
+	partitionedSet = partitionSetToSameLHS(minimalCover)
+	
+	for fd in partitionedSet: # keys = LHS
 		print fd
 
 def decomposeToBCNF(conn, c):

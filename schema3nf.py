@@ -125,6 +125,27 @@ def computeMinimalCover(conn, c):
 
 	return minimalCover
 
+# ====================== Partition U into sets U1, U2, ... Un such that the LHS of all elements of Ui are the same.
+def partitionSetToSameLHS(minimalCover):
+	print "partition to same LHS"
+	newFD = set()
+	for fd in minimalCover:
+		singleFDSet = set()
+		tempSet = set(minimalCover)
+		tempSet.remove(fd)
+
+		singleFDSet.add(fd)
+		for tempFD in tempSet:
+			if(fd[0] == tempFD[0]): # we found another same LHS
+				singleFDSet.add(tempFD)
+
+		newFD.add(frozenset(singleFDSet))
+
+	return newFD
+
+
+
+
 
 
 
