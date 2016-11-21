@@ -30,7 +30,26 @@ def getFDSet(conn, c, tableName):
 	return fdSet
 
 def getClosure(lhs, fdSet):
-	return ''
+	# working with sets, so no need to worry about duplicates
+	closure = set(lhs) # eg. BH+ = BH
+	# print ''.join(lhs) + "+ = " + ''.join(closure)
+
+	for fd in fdSet: 
+		tempLHS = fd[0].split(',')
+		foundLHS = True
+
+		for c in tempLHS:	# find if we can add the RHS to the closure
+			if c not in closure:
+				foundLHS = False
+				break
+
+		if foundLHS: # we can add it!
+			closure.add(fd[1])
+
+	if(lhs == closure): # we have iterated through the whole thing and cant add anymore!
+		return closure
+	else:
+		return getClosure(closure, fdSet)
 
 def computeMinimalCover(conn, c):
 	print "Computing minimal cover"
@@ -54,15 +73,21 @@ def computeMinimalCover(conn, c):
 	tempSet = set()
 	for fd in fdSet:
 		if ',' in fd[0]: # possible redundancy
-			lhsList = fd[0].split(',')
-			for c in lhsList:
+			for c in fd[0].split(','):
 				#eliminate from lhs
-				tempLHS = lhsList.remove(c)
-				lhs = ''.join(tempLHS)
+				templhs = fd[0].split(',')
+				# print "Before Removal: " + ''.join(templhs)
+				# print "... removing " + c
+				templhs.remove(c)
+				# print "After Removal: " + ''.join(templhs)
 
-				rhsClosure = getClosure(lhs, fdSet)
+				closure = getClosure(templhs, fdSet)
+				# print "Original: " + fd[0] + "-->" + fd[1]
+				# print ''.join(templhs) + "+ = " + ''.join(closure)
+
+				if fd[1] in closure: # then we know that single attribute is redundant
+					print c + " is redundant in " + fd[0] + " --> " + fd[1]
 				# check if we can get a closure that gets us the rhs
-
 		else:
 			tempSet.add(fd)
 	fdSet = tempSet
