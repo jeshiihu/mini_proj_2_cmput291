@@ -29,6 +29,5 @@ def main():
 	promptAction(conn, c)
 
 
-
 if __name__ == '__main__':
 	main()

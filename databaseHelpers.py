@@ -46,7 +46,16 @@ def getConnectionCursor(filename):
 
 def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"
-	computMinimalCover()
+	computeMinimalCover(conn, c)
 
 def decomposeToBCNF(conn, c):
 	print "In decompose BCNF"
+	
+
+
+
+
+
+
+
+
