@@ -50,8 +50,10 @@ def synthesizeTo3NF(conn, c):
 	# returns a set of (LHS, RHS)
 	minimalCover = computeMinimalCover(conn, c)
 	partitionedSet = partitionSetToSameLHS(minimalCover)
+	formSchemaForEachUi(partitionedSet)
+	addAdditionalSchemaIfNoSuperKey(partitionedSet)
 	
-	for fd in partitionedSet: # keys = LHS
+	for fd in partitionedSet:
 		print fd
 
 def decomposeToBCNF(conn, c):

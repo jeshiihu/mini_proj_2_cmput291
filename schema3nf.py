@@ -112,6 +112,7 @@ def removeRedundantFds(fdSet):
 	else:
 		return removeRedundantFds(newFDSet)
 
+# ====================== 1. Compute Fm, the minimal cover for F
 def computeMinimalCover(conn, c):
 	print "Computing minimal cover"
 
@@ -125,7 +126,7 @@ def computeMinimalCover(conn, c):
 
 	return minimalCover
 
-# ====================== Partition U into sets U1, U2, ... Un such that the LHS of all elements of Ui are the same.
+# ====================== 2. Partition U into sets U1, U2, ... Un such that the LHS of all elements of Ui are the same.
 def partitionSetToSameLHS(minimalCover):
 	print "partition to same LHS"
 	newFD = set()
@@ -142,6 +143,16 @@ def partitionSetToSameLHS(minimalCover):
 		newFD.add(frozenset(singleFDSet))
 
 	return newFD
+
+# ====================== 3. For each Ui form schema Ri = (Ri, Ui), where Ri is the set of all attributes mentioned in Ui,
+# ====================== each FD of U will be in some Ri. Hence the decomposition is dependency preserving.
+def formSchemaForEachUi(partitionedSet):
+	print "forming schema for each UI"
+
+# ====================== 4. If none of the schemas from step 2 includes a superkey for R, add another relation schema that 
+# ====================== has a key for R
+def addAdditionalSchemaIfNoSuperKey(schema):
+	print "adding additional schema if necessary"
 
 
 
