@@ -70,27 +70,37 @@ def computeMinimalCover(conn, c):
 	fdSet = tempSet
 
 	# 2. Elimate redundant attribute from LHS
+	print "=== Before eliminating redundant attr form LHS ==="
+	for fd in fdSet: # keys = LHS
+		print fd
+
 	tempSet = set()
 	for fd in fdSet:
 		if ',' in fd[0]: # possible redundancy
+
+			redundantAttr = set()
 			for c in fd[0].split(','):
-				#eliminate from lhs
 				templhs = fd[0].split(',')
-				# print "Before Removal: " + ''.join(templhs)
-				# print "... removing " + c
-				templhs.remove(c)
-				# print "After Removal: " + ''.join(templhs)
+				templhs.remove(c) #temporarily remove from LHS
 
 				closure = getClosure(templhs, fdSet)
-				# print "Original: " + fd[0] + "-->" + fd[1]
-				# print ''.join(templhs) + "+ = " + ''.join(closure)
-
 				if fd[1] in closure: # then we know that single attribute is redundant
 					print c + " is redundant in " + fd[0] + " --> " + fd[1]
+					redundantAttr.add(c)
+			
+			lhs = fd[0].split(',')
+			for c in redundantAttr: # we got a redundant values
+				lhs.remove(c)
+			
+			tempSet.add((''.join(lhs), fd[1]))
 				# check if we can get a closure that gets us the rhs
 		else:
 			tempSet.add(fd)
 	fdSet = tempSet
+
+	print "=== after eliminating redundant attr form LHS ==="
+	for fd in fdSet: # keys = LHS
+		print fd
 
 	# 3. Delete redundant FDs
 
