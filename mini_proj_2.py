@@ -5,7 +5,7 @@ import sqlite3
 
 from databaseHelpers import *
 
-def promptAction(conn, c):
+def promptAction(conn, c, filename):
 	print "Please select an action you wish to perform..."
 	print "	[0] Display all database schemas"
 	print "	[1] Synthesize table to 3NF"
@@ -32,7 +32,7 @@ def main():
 	filename = getDBFile()
 	conn, c = getConnectionCursor(filename)
 
-	promptAction(conn, c)
+	promptAction(conn, c, filename)
 
 
 
