@@ -181,22 +181,49 @@ def formSchemaForEachUi(partitionedSet):
 		newSchema[''.join(RiSet)] = fds # fds is the Ui
 
 	for schema in newSchema:
-		print "Key", schema
-		print "Values" , newSchema[schema]
+		print schema, newSchema[schema]
 
 	return newSchema
 
 
 # ====================== 4. If none of the schemas from step 2 includes a superkey for R, add another relation schema that 
 # ====================== has a key for R
-def addAdditionalSchemaIfNoSuperKey(conn, c, schema):
+def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 	print "adding additional schema if necessary"
 	tableName = getInputTableName(conn, c)
 	results = getInputTable(conn, c, tableName)
+	keys = results[0].keys()
 
-	print results[0].keys()
-	for r in results:
-		print r
+	foundSuperKey = False
+	for fd in minimalCover:
+		print fd[0] + '-->' + fd[1]
+		closure = getClosure(fd[0], minimalCover)
+		# print "Closure for ", fd[0] + "+ = ", closure
+		allAttrInKeys = True
+
+		for attr in keys:
+			if attr not in closure:
+				allAttrInKeys = False
+				break
+
+		if allAttrInKeys:
+			foundSuperKey = True
+			break
+
+	if foundSuperKey: # don't need to add an additional schema
+		return
+
+	# must add an additional schema
+	print "idk how to do this.."
+
+def createTables(conn, c, schemaDict): # format is a dict
+	inputTableName = getInputTableName(conn, c)
+	outputTableName = inputTableName.replace("Input", "Output") + "_"
+
+	for key in schemaDict:
+		tableName = outputTableName + key
+		print tableName
+
 
 
 
