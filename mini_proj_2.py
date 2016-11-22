@@ -3,7 +3,7 @@ import sqlite3
 
 from databaseHelpers import *
 
-def promptAction(conn, c):
+def promptAction(conn, c, filename):
 	print "Please select an action you wish to perform..."
 	print "	[0] Synthesize table to 3NF"
 	print "	[1] Decompose table to BCNF"
@@ -26,7 +26,7 @@ def main():
 	filename = getDBFile()
 	conn, c = getConnectionCursor(filename)
 
-	promptAction(conn, c)
+	promptAction(conn, c, filename)
 
 
 if __name__ == '__main__':
