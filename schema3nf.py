@@ -60,10 +60,6 @@ def getFDSet(conn, c, tableName):
 	for r in results:
 		fdSet.add((r['LHS'], r['RHS']))
 
-	# # ----------------------- TESTING -----------------------
-	# for fd in fdSet: # keys = LHS
-	# 	print fd
-
 	return fdSet
 
 # =================================== 1. make the RHS of each FD into a single attribute ===================================
@@ -82,7 +78,6 @@ def makeRHSToSingleAttr(fdSet):
 def getClosure(lhs, fdSet):
 	# working with sets, so no need to worry about duplicates
 	closure = set(lhs) # eg. BH+ = BH
-	# print ''.join(lhs) + "+ = " + ''.join(closure)
 
 	for fd in fdSet: 
 		tempLHS = getStringSet(fd[0])
@@ -114,7 +109,6 @@ def removeLhsRedundantAttr(fdSet):
 
 				closure = getClosure(templhs, fdSet)
 				if fd[1] in closure: # then we know that single attribute is redundant
-					# print c + " is redundant in " + fd[0] + " --> " + fd[1]
 					redundantAttr.add(c)
 			
 			lhs = getStringSet(fd[0])
@@ -215,9 +209,7 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 
 	foundSuperKey = False
 	for fd in minimalCover:
-		print fd[0] + '-->' + fd[1]
 		closure = getClosure(fd[0], minimalCover)
-		print "Closure for ", fd[0] + "+ = ", closure
 		allAttrInKeys = True
 
 		for attr in keys:
@@ -257,11 +249,19 @@ def createTables(conn, c, schemaDict): # format is a dict
 	inputFdTableName = getFDTableName(conn, c)
 	outputFdTableName = inputFdTableName.replace("Input", "Output") + "_"
 
+	input = getInputTable(conn, c, inputTableName)
+
+	print "keys", input[0].keys()
+	for i in input:
+		print i
 
 	for key in schemaDict:
 		tableName = outputTableName + key
-		print tableName
+		dropTable(conn, c, tableName)
+		query = "CREATE TABLE " + tableName + " (LHS TEXT, RHS TEXT);"
+		c.execute(query)
 
+		# create the output FDs tables
 		fdTableName = outputFdTableName + key
 		dropTable(conn, c, fdTableName)
 		query = "CREATE TABLE " + fdTableName + " (LHS TEXT, RHS TEXT);"
