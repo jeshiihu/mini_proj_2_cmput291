@@ -208,12 +208,18 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 	keys = results[0].keys()
 
 	foundSuperKey = False
+	prevClosure = ""
+	lhsWithMostAttributesInClosure = ""
 	for fd in minimalCover:
-		closure = getClosure(fd[0], minimalCover)
+		closure = getClosure(fd[0], minimalCover) # this is a comma string
 		allAttrInKeys = True
 
 		for attr in keys:
 			if attr not in closure:
+				if(len(closure) >= len(prevClosure)): # get the closure that has the most attributes!
+					lhsWithMostAttributesInClosure = fd[0]
+					prevClosure = closure
+
 				allAttrInKeys = False
 				break
 
@@ -224,8 +230,20 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 	if foundSuperKey: # don't need to add an additional schema
 		return
 
-	# must add an additional schema
-	print "idk how to do this.."
+	#augmentation
+	closure = getClosure(lhsWithMostAttributesInClosure, minimalCover)
+	lhs = getStringSet(lhsWithMostAttributesInClosure)
+	for attr in keys:
+		if attr not in closure: # add to the lhs
+			lhs.append(attr)
+
+	for min in minimalCover:
+		print min
+
+	lhs = ''.join(lhs)
+	newSchema = dict()
+	newSchema[lhs] = ""
+	return newSchema
 
 def tableExists(conn, c, tableName):
 	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (tableName,))
@@ -242,6 +260,26 @@ def dropTable(conn, c, tableName):
 	conn.commit()
 
 
+def createFDTables(conn, c, schemaDict, baseOutputName):
+	for key in schemaDict:
+		# create the output FDs tables
+		fdTableName = baseOutputName + key
+		dropTable(conn, c, fdTableName)
+		query = "CREATE TABLE " + fdTableName + " (LHS TEXT, RHS TEXT);"
+		c.execute(query)
+		for fd in schemaDict[key]:
+			insert = [fd[0], fd[1]] #lhs rhs
+			query = "INSERT INTO " + fdTableName + " VALUES (?,?)"
+			c.execute(query, insert)
+		conn.commit()
+
+def createRelationalTables(conn, c, schemaDict, baseOutputName):
+	for key in schemaDict:
+		tableName = baseOutputName + key
+		dropTable(conn, c, tableName)
+		query = "CREATE TABLE " + tableName + " (LHS TEXT, RHS TEXT);"
+		c.execute(query)
+
 def createTables(conn, c, schemaDict): # format is a dict
 	inputTableName = getInputTableName(conn, c)
 	outputTableName = inputTableName.replace("Input", "Output") + "_"
@@ -255,22 +293,8 @@ def createTables(conn, c, schemaDict): # format is a dict
 	for i in input:
 		print i
 
-	for key in schemaDict:
-		tableName = outputTableName + key
-		dropTable(conn, c, tableName)
-		query = "CREATE TABLE " + tableName + " (LHS TEXT, RHS TEXT);"
-		c.execute(query)
-
-		# create the output FDs tables
-		fdTableName = outputFdTableName + key
-		dropTable(conn, c, fdTableName)
-		query = "CREATE TABLE " + fdTableName + " (LHS TEXT, RHS TEXT);"
-		c.execute(query)
-		for fd in schemaDict[key]:
-			insert = [fd[0], fd[1]] #lhs rhs
-			query = "INSERT INTO " + fdTableName + " VALUES (?,?)"
-			c.execute(query, insert)
-		conn.commit()
+	createRelationalTables(conn, c, schemaDict, outputTableName)
+	createFDTables(conn, c, schemaDict, outputFdTableName)
 
 
 
