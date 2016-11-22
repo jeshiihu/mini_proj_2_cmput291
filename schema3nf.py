@@ -100,6 +100,7 @@ def getClosure(lhs, fdSet):
 def removeLhsRedundantAttr(fdSet):
 	tempSet = set()
 	for fd in fdSet:
+		print "Removing lhs redundancy", fd
 		if ',' in fd[0]: # possible redundancy
 
 			redundantAttr = set()
@@ -199,6 +200,8 @@ def formSchemaForEachUi(partitionedSet):
 	return newSchema
 
 
+def isClosureSuperKey(keys, closure):
+	i = 0
 # ====================== 4. If none of the schemas from step 2 includes a superkey for R, add another relation schema that 
 # ====================== has a key for R
 def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
@@ -210,6 +213,13 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 	foundSuperKey = False
 	prevClosure = ""
 	lhsWithMostAttributesInClosure = ""
+
+	#TEST
+	# keys = ['A', 'B', 'C', 'D']
+	# minimalCover = set()
+	# minimalCover.add(('A', 'B'))
+	# minimalCover.add(('C', 'D'))
+
 	for fd in minimalCover:
 		closure = getClosure(fd[0], minimalCover) # this is a comma string
 		allAttrInKeys = True
@@ -232,18 +242,29 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 
 	#augmentation
 	closure = getClosure(lhsWithMostAttributesInClosure, minimalCover)
-	lhs = getStringSet(lhsWithMostAttributesInClosure)
-	for attr in keys:
-		if attr not in closure: # add to the lhs
-			lhs.append(attr)
+	print lhsWithMostAttributesInClosure + "+ = " + closure
+	lhs = set(getStringSet(lhsWithMostAttributesInClosure))
 
-	for min in minimalCover:
-		print min
 
-	lhs = ''.join(lhs)
-	newSchema = dict()
-	newSchema[lhs] = ""
-	return newSchema
+	for fd in minimalCover:
+		fdLhs = getStringSet(fd[0])
+
+		foundSuper = True
+		for attr in fdLhs:
+			if attr not in closure:
+				lhs.add(attr)
+			# after adding check if we got a super key!
+			lhsClosure = getClosure(''.join(lhs), minimalCover)
+			for at in keys:
+				if at not in lhsClosure:
+					foundSuper = False
+
+			if foundSuper:
+				break
+		if foundSuper:
+			break
+	print ''.join(lhs)
+	return ''.join(lhs)
 
 def tableExists(conn, c, tableName):
 	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (tableName,))
