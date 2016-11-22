@@ -216,13 +216,39 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 	# must add an additional schema
 	print "idk how to do this.."
 
+def tableExists(conn, c, tableName):
+	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (tableName,))
+	result = c.fetchone()
+
+	if not result:
+		return False
+
+	return True
+
+def dropTable(conn, c, tableName):
+	query = "DROP TABLE IF EXISTS " + tableName + ";"
+	c.execute(query)
+	conn.commit()
+
+
 def createTables(conn, c, schemaDict): # format is a dict
 	inputTableName = getInputTableName(conn, c)
 	outputTableName = inputTableName.replace("Input", "Output") + "_"
 
+	inputFdTableName = getFDTableName(conn, c)
+	outputFdTableName = inputFdTableName.replace("Input", "Output") + "_"
+
+
 	for key in schemaDict:
 		tableName = outputTableName + key
 		print tableName
+
+		fdTableName = outputFdTableName + key
+		
+		dropTable(conn, c, fdTableName)
+		query = "CREATE TABLE " + fdTableName + " (LHS TEXT, RHS TEXT);"
+		c.execute(query)
+		conn.commit()
 
 
 
