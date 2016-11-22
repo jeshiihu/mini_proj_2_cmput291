@@ -1,5 +1,26 @@
 import sqlite3
 
+def getInputTableName(conn,c):
+	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'input_%' AND name NOT LIKE 'input_fds_%';")
+	result = c.fetchone()
+
+	if not result:
+		print "Error: could not get Input Table Name"
+		exit()
+
+	return result[0]
+
+def getInputTable(conn, c, tablename):
+	query = 'SELECT * FROM ' + tablename + ';'
+	c.execute(query)
+	results = c.fetchall()
+
+	if not results:
+		print "Error: could not get Input Table Name"
+		exit()
+
+	return results
+
 def getFDTableName(conn, c):
 	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'input_fds_%';")
 	result = c.fetchone()
@@ -148,13 +169,34 @@ def partitionSetToSameLHS(minimalCover):
 # ====================== each FD of U will be in some Ri. Hence the decomposition is dependency preserving.
 def formSchemaForEachUi(partitionedSet):
 	print "forming schema for each UI"
+	newSchema = dict()
+	fdSet = set()
+
+	for fds in partitionedSet:
+		RiSet = set() # set of attributes
+		for fd in fds:
+			for attr in fd: # add all attributes to the Ri
+				RiSet.add(attr)
+
+		newSchema[''.join(RiSet)] = fds # fds is the Ui
+
+	for schema in newSchema:
+		print "Key", schema
+		print "Values" , newSchema[schema]
+
+	return newSchema
+
 
 # ====================== 4. If none of the schemas from step 2 includes a superkey for R, add another relation schema that 
 # ====================== has a key for R
-def addAdditionalSchemaIfNoSuperKey(schema):
+def addAdditionalSchemaIfNoSuperKey(conn, c, schema):
 	print "adding additional schema if necessary"
+	tableName = getInputTableName(conn, c)
+	results = getInputTable(conn, c, tableName)
 
-
+	print results[0].keys()
+	for r in results:
+		print r
 
 
 
