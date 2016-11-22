@@ -48,12 +48,18 @@ def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"
 
 def decomposeToBCNF(conn, c):
-	table = raw_input('please enter name of input table: ')
-	sqlGetR = '''
-				select *
-				from Input_%s;
+	sqlGetRTable = '''
+				SELECT name
+				 FROM sqlite_master 
+				 WHERE type='table' AND name LIKE 'input_%' AND name NOT LIKE 'input_fds_%';
 				'''
-	c.execute(sqlGetR %table)
+	c.execute(sqlGetRTable)
+	Rtable = c.fetchone()
+	sqlGetR = '''
+			select *
+			from %s;
+			'''
+	c.execute(sqlGetR %Rtable[0])
 	row = c.fetchone()
 	Rsql = row.keys()
 	R = ''
@@ -61,14 +67,21 @@ def decomposeToBCNF(conn, c):
 		R = R + attribute
 	print(R)
 
-	#getTableColumnAndType(c, table)
+	getTableColumnAndType(c, Rtable)
 
 	# Ftable = raw_input('please enter name of input table with FD: ')
+	sqlGetFTable = '''
+			SELECT name 
+			FROM sqlite_master 
+			WHERE type='table' AND name LIKE 'input_fds_%';
+			'''
+	c.execute(sqlGetFTable)
+	Ftable = c.fetchone()
 	sqlGetF = '''
 			select *
-			from Input_FDS_%s;
+			from %s;
 			'''
-	c.execute(sqlGetF %table)
+	c.execute(sqlGetF %Ftable[0])
 	F = c.fetchall()
 	print(F)
 
@@ -142,12 +155,12 @@ def findViolatingBCNF (R, F):
 def getTableColumnAndType(c, table):
 	sqltest = '''
 				select sql from sqlite_master
-				where tbl_name = 'Input_%s' and type = 'table'
+				where tbl_name = '%s' and type = 'table'
 				'''
-	c.execute(sqltest %table)
+	c.execute(sqltest %table[0])
 	tableInfo = c.fetchall()
 	tableInfo = tableInfo[0][0]
-	tableInfo = tableInfo.replace('CREATE TABLE Input_%s(' %table, '')
+	tableInfo = tableInfo.replace('CREATE TABLE %s(' %table[0], '')
 	tableInfo = tableInfo.replace(')', '')
 	tableInfo = tableInfo.replace('\n', '')
 	tableInfo = tableInfo.rstrip().strip().lstrip()
