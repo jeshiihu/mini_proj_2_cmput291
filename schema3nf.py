@@ -1,5 +1,21 @@
 import sqlite3
 
+def getCommaString(set):
+	string = ""
+	for c in set:
+		string = string + c + ","
+
+	while(1):
+		if string[-1:] == ",":
+			string = string[:-1]
+		else:
+			break
+
+	return string
+
+def getStringSet(string):
+	return string.split(',')
+
 def getInputTableName(conn,c):
 	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'input_%' AND name NOT LIKE 'input_fds_%';")
 	result = c.fetchone()
@@ -55,7 +71,7 @@ def makeRHSToSingleAttr(fdSet):
 	tempSet = set()
 	for fd in fdSet:
 		if "," in fd[1]:
-			rhsList = fd[1].split(',')
+			rhsList = getStringSet(fd[1])
 			for c in rhsList:
 				tempSet.add((fd[0],c))
 		else:
@@ -69,7 +85,7 @@ def getClosure(lhs, fdSet):
 	# print ''.join(lhs) + "+ = " + ''.join(closure)
 
 	for fd in fdSet: 
-		tempLHS = fd[0].split(',')
+		tempLHS = getStringSet(fd[0])
 		foundLHS = True
 
 		for c in tempLHS:	# find if we can add the RHS to the closure
@@ -81,7 +97,7 @@ def getClosure(lhs, fdSet):
 			closure.add(fd[1])
 
 	if(lhs == closure): # we have iterated through the whole thing and cant add anymore!
-		return closure
+		return getCommaString(closure)
 	else:
 		return getClosure(closure, fdSet)
 
@@ -101,7 +117,7 @@ def removeLhsRedundantAttr(fdSet):
 					# print c + " is redundant in " + fd[0] + " --> " + fd[1]
 					redundantAttr.add(c)
 			
-			lhs = fd[0].split(',')
+			lhs = getStringSet(fd[0])
 			for c in redundantAttr: # we got a redundant values
 				lhs.remove(c)
 			
@@ -124,7 +140,6 @@ def removeRedundantFds(fdSet):
 
 		lhs = fd[0].split(',')
 		closure = getClosure(lhs, tempFdSet)
-		
 		if not fd[1] in closure: # not redundant
 			newFDSet.add(fd)
 
@@ -145,7 +160,11 @@ def computeMinimalCover(conn, c):
 	minimalCover = removeLhsRedundantAttr(minimalCover)
 	minimalCover = removeRedundantFds(minimalCover)
 
-	return minimalCover
+	minCover = set()
+	for fd in minimalCover:
+		minCover.add((getCommaString(fd[0]), fd[1]));
+
+	return minCover
 
 # ====================== 2. Partition U into sets U1, U2, ... Un such that the LHS of all elements of Ui are the same.
 def partitionSetToSameLHS(minimalCover):
@@ -173,15 +192,15 @@ def formSchemaForEachUi(partitionedSet):
 	fdSet = set()
 
 	for fds in partitionedSet:
-		RiSet = set() # set of attributes
+		RiList = list() # set of attributes
 		for fd in fds:
 			for attr in fd: # add all attributes to the Ri
-				RiSet.add(attr)
+				if attr not in RiList:
+					RiList.append(attr)
 
-		newSchema[''.join(RiSet)] = fds # fds is the Ui
-
-	for schema in newSchema:
-		print schema, newSchema[schema]
+		Ri = ''.join(RiList)
+		Ri = Ri.replace(',', '')
+		newSchema[Ri] = fds # fds is the Ui
 
 	return newSchema
 
@@ -198,7 +217,7 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 	for fd in minimalCover:
 		print fd[0] + '-->' + fd[1]
 		closure = getClosure(fd[0], minimalCover)
-		# print "Closure for ", fd[0] + "+ = ", closure
+		print "Closure for ", fd[0] + "+ = ", closure
 		allAttrInKeys = True
 
 		for attr in keys:
@@ -244,10 +263,13 @@ def createTables(conn, c, schemaDict): # format is a dict
 		print tableName
 
 		fdTableName = outputFdTableName + key
-		
 		dropTable(conn, c, fdTableName)
 		query = "CREATE TABLE " + fdTableName + " (LHS TEXT, RHS TEXT);"
 		c.execute(query)
+		for fd in schemaDict[key]:
+			insert = [fd[0], fd[1]] #lhs rhs
+			query = "INSERT INTO " + fdTableName + " VALUES (?,?)"
+			c.execute(query, insert)
 		conn.commit()
 
 
