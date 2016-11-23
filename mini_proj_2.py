@@ -1,7 +1,7 @@
 # Mini Project 2
 import sqlite3
 
-from databaseHelpers import *
+from databaseController import *
 
 def promptAction(conn, c, filename):
 	print "Please select an action you wish to perform..."

@@ -2,12 +2,8 @@ import os.path
 import re
 import sqlite3
 from schema3nf import *
+from helpers import *
 import copy
-
-def strStripLower(str):
-	str = str.strip()
-	str = str.lower()
-	return str
 
 def getDBFile():
 	dbFile = raw_input("Please enter an input database (name.db): ")
@@ -32,13 +28,6 @@ def getConnectionCursor(filename):
 	conn.row_factory = sqlite3.Row
 	c = conn.cursor()
 	return conn, c
-
-def displayDatabaseSchema(conn, c):
-	c.execute("show create table sqlite_master")
-	results = c.fetchall()
-
-	for i in results:
-		print i
 
 def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"
