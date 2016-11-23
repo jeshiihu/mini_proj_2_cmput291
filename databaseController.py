@@ -29,6 +29,10 @@ def getConnectionCursor(filename):
 	c = conn.cursor()
 	return conn, c
 
+def findClosure(conn, c):
+	print "Finding Closure"
+
+
 def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"
 
