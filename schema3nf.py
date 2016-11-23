@@ -259,6 +259,9 @@ def createRelationalTables(conn, c, schemaDict):
 			columnType = getSpecificColumnType(tableInfo, attr)
 			columns = columns + attr + " " + columnType + ', '
 
+		if len(schemaDict[key]) > 0: # as long as it has FDs
+			fd = set(schemaDict[key]).pop()
+			columns = columns + "PRIMARY KEY (" + fd[0] + ")"
 		columns = strStripUpper(columns)
 		dropTable(conn, c, tableName)
 		query = "CREATE TABLE " + tableName + "(" + columns + ");"
