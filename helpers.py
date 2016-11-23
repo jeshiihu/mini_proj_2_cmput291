@@ -90,15 +90,30 @@ def getTableColumnAndType(c, table):
 		print "Error, cannot get table info"
 		exit()
 
-	for t in tableInfo:
-		print t
-
 	tableInfo = tableInfo[0][0]
 	tableInfo = tableInfo.replace('CREATE TABLE %s(' %table[0], '')
 	tableInfo = tableInfo.replace(')', '')
 	tableInfo = tableInfo.replace('\n', '')
 	tableInfo = tableInfo.rstrip().strip().lstrip()
-	print(tableInfo)
 
 	return tableInfo
+
+# returns a string indicating the type, column
+def getSpecificColumnType(allColumns, column):
+	if column not in allColumns:
+		print "Error column " + column + " not found"
+		exit()
+
+	setOfColumnsAndTypes = getStringSet(allColumns)
+	for columnType in setOfColumnsAndTypes:
+		columnType = columnType.strip()
+		singleColumnType = tuple(columnType.split(" "))
+		if column == singleColumnType[0]:
+			return singleColumnType[1]
+
+
+
+
+
+
 

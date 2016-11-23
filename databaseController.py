@@ -36,13 +36,13 @@ def synthesizeTo3NF(conn, c):
 	minimalCover = computeMinimalCover(conn, c)
 	partitionedSet = partitionSetToSameLHS(minimalCover)
 	schema = formSchemaForEachUi(partitionedSet)
-	newRi = addAdditionalSchemaIfNoSuperKey(conn, c, minimalCover)
+	newRiDict = addAdditionalSchemaIfNoSuperKey(conn, c, minimalCover)
 
 	createTables(conn, c, schema)
 
 	inputTableName = getInputTableName(conn, c)
 	outputTableName = inputTableName.replace("Input", "Output") + "_"
-	createRelationalTables(conn, c, newSchema, outputTableName)
+	createRelationalTables(conn, c, newRiDict)
 
 
 def decomposeToBCNF(conn, c):

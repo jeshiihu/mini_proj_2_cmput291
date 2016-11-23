@@ -124,15 +124,13 @@ def formSchemaForEachUi(partitionedSet):
 	fdSet = set()
 
 	for fds in partitionedSet:
-		RiList = list() # set of attributes
+		RiSet = set() # set of attributes
 		for fd in fds:
 			for attr in fd: # add all attributes to the Ri
-				if attr not in RiList:
-					RiList.append(attr)
-
-		Ri = ''.join(RiList)
-		Ri = Ri.replace(',', '')
-		newSchema[Ri] = fds # fds is the Ui
+				for c in getStringSet(attr):
+					if c not in RiSet:
+						RiSet.add(c)
+		newSchema[frozenset(RiSet)] = fds # fds is the Ui
 
 	return newSchema
 
@@ -211,7 +209,9 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, minimalCover):
 	newLhs = removeLhsSuperKey(keys, minimalCover, lhs)
 	# print ''.join(newLhs)
 	
-	return ''.join(newLhs)
+	d = dict()
+	d[frozenset(newLhs)] = ""
+	return d
 
 def tableExists(conn, c, tableName):
 	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (tableName,))
@@ -228,10 +228,13 @@ def dropTable(conn, c, tableName):
 	conn.commit()
 
 
-def createFDTables(conn, c, schemaDict, baseOutputName):
+def createFDTables(conn, c, schemaDict):
+	inputFdTableName = getFDTableName(conn, c)
+	baseOutputName = inputFdTableName.replace("Input", "Output") + "_"
+
 	for key in schemaDict:
 		# create the output FDs tables
-		fdTableName = baseOutputName + key
+		fdTableName = baseOutputName + ''.join(key)
 		dropTable(conn, c, fdTableName)
 		query = "CREATE TABLE " + fdTableName + " (LHS TEXT, RHS TEXT);"
 		c.execute(query)
@@ -241,33 +244,28 @@ def createFDTables(conn, c, schemaDict, baseOutputName):
 			c.execute(query, insert)
 		conn.commit()
 
-def createRelationalTables(conn, c, schemaDict, baseOutputName):
-	for key in schemaDict:
-		tableName = baseOutputName + key
-		dropTable(conn, c, tableName)
+def createRelationalTables(conn, c, schemaDict):
+	inputTableName = getInputTableName(conn, c)
+	baseOutputName = inputTableName.replace("Input", "Output") + "_"
+	
+	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (inputTableName, ))
+	result = c.fetchone()
+	tableInfo = getTableColumnAndType(c, result)
 
+	for key in schemaDict:
+		tableName = baseOutputName + ''.join(key)
+		for attr in key:
+			columnType = getSpecificColumnType(tableInfo, attr)
+			print attr, columnType
+
+		dropTable(conn, c, tableName)
 		query = "CREATE TABLE " + tableName + " (LHS TEXT, RHS TEXT);"
 		c.execute(query)
+	conn.commit()
 
 def createTables(conn, c, schemaDict): # format is a dict
-	inputTableName = getInputTableName(conn, c)
-	outputTableName = inputTableName.replace("Input", "Output") + "_"
-
-	table = getInputTable(conn, c, inputTableName)
-	tableInfo = getTableColumnAndType(c, table)
-	exit()
-
-	inputFdTableName = getFDTableName(conn, c)
-	outputFdTableName = inputFdTableName.replace("Input", "Output") + "_"
-
-	input = getInputTable(conn, c, inputTableName)
-
-	print "keys", input[0].keys()
-	for i in input:
-		print i
-
-	createRelationalTables(conn, c, schemaDict, outputTableName)
-	createFDTables(conn, c, schemaDict, outputFdTableName)
+	createRelationalTables(conn, c, schemaDict)
+	createFDTables(conn, c, schemaDict)
 
 
 
