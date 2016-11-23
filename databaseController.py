@@ -150,17 +150,3 @@ def findViolatingBCNF (R, F):
 					return FD
 					foundViolatingFD = True
 	return 'no violating'
-
-def getTableColumnAndType(c, table):
-	sqltest = '''
-				select sql from sqlite_master
-				where tbl_name = '%s' and type = 'table'
-				'''
-	c.execute(sqltest %table[0])
-	tableInfo = c.fetchall()
-	tableInfo = tableInfo[0][0]
-	tableInfo = tableInfo.replace('CREATE TABLE %s(' %table[0], '')
-	tableInfo = tableInfo.replace(')', '')
-	tableInfo = tableInfo.replace('\n', '')
-	tableInfo = tableInfo.rstrip().strip().lstrip()
-	print(tableInfo)

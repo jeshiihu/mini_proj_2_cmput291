@@ -77,3 +77,28 @@ def getFDSet(conn, c, tableName):
 
 	return fdSet
 
+# gets the table info
+def getTableColumnAndType(c, table):
+	sqltest = '''
+				select sql from sqlite_master
+				where tbl_name = '%s' and type = 'table'
+				'''
+	c.execute(sqltest %table[0])
+	tableInfo = c.fetchall()
+
+	if not tableInfo:
+		print "Error, cannot get table info"
+		exit()
+
+	for t in tableInfo:
+		print t
+
+	tableInfo = tableInfo[0][0]
+	tableInfo = tableInfo.replace('CREATE TABLE %s(' %table[0], '')
+	tableInfo = tableInfo.replace(')', '')
+	tableInfo = tableInfo.replace('\n', '')
+	tableInfo = tableInfo.rstrip().strip().lstrip()
+	print(tableInfo)
+
+	return tableInfo
+

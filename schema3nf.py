@@ -245,12 +245,17 @@ def createRelationalTables(conn, c, schemaDict, baseOutputName):
 	for key in schemaDict:
 		tableName = baseOutputName + key
 		dropTable(conn, c, tableName)
+
 		query = "CREATE TABLE " + tableName + " (LHS TEXT, RHS TEXT);"
 		c.execute(query)
 
 def createTables(conn, c, schemaDict): # format is a dict
 	inputTableName = getInputTableName(conn, c)
 	outputTableName = inputTableName.replace("Input", "Output") + "_"
+
+	table = getInputTable(conn, c, inputTableName)
+	tableInfo = getTableColumnAndType(c, table)
+	exit()
 
 	inputFdTableName = getFDTableName(conn, c)
 	outputFdTableName = inputFdTableName.replace("Input", "Output") + "_"
