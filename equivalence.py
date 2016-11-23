@@ -1,5 +1,5 @@
 from schema3nf import *
-from databaseHelpers import *
+from helpers import *
 
 def checkEquivalence(F,G):
 	equiv = True
@@ -10,22 +10,22 @@ def checkEquivalence(F,G):
 		for i in f[1]:
 			if i not in ac:
 				containsRHS = False
-				break		
+				# break		
 
 		if not containsRHS:
 			equiv = False
-			break
+			# break
 
 	return equiv
 
 
-# def main():
-# 	F = set([('A','C'),('A,C','D'),('E,A','D'),('E','F')])
-# 	G = set([('A','C,D'),('E','A,D,F')])
+def main():
+	F = set([('A','C'),('A,C','D'),('E,A','D'),('E','F')])
+	G = set([('A','C,D'),('E','A,D,F'),('Z','X')])
 
-# 	test = checkEquivalence(F,G)
-# 	print(test)
+	test = checkEquivalence(F,G)
+	print(test)
 
 
 
-# main()
+main()
