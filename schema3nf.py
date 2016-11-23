@@ -253,14 +253,18 @@ def createRelationalTables(conn, c, schemaDict):
 	tableInfo = getTableColumnAndType(c, result)
 
 	for key in schemaDict:
+		columns = ""
 		tableName = baseOutputName + ''.join(key)
 		for attr in key:
 			columnType = getSpecificColumnType(tableInfo, attr)
-			print attr, columnType
+			columns = columns + attr + " " + columnType + ', '
 
+		columns = strStripUpper(columns)
 		dropTable(conn, c, tableName)
-		query = "CREATE TABLE " + tableName + " (LHS TEXT, RHS TEXT);"
+		query = "CREATE TABLE " + tableName + "(" + columns + ");"
 		c.execute(query)
+		conn.commit()
+
 	conn.commit()
 
 def createTables(conn, c, schemaDict): # format is a dict

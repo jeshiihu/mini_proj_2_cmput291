@@ -4,6 +4,19 @@
 def strStripLower(str):
 	str = str.strip()
 	str = str.lower()
+
+	return str
+
+def strStripUpper(str):
+	str = str.strip()
+	str = str.upper()
+
+	while(1):
+		if str[-1:] == ",":
+			str = str[:-1]
+		else:
+			break
+
 	return str
 
 #takes in a set of objs (chars) and returns it in string form
