@@ -6,19 +6,18 @@ from helpers import *
 import copy
 
 def getDBFile():
-	while(1):
-		dbFile = raw_input("Please enter an input database (name.db): ")
-		dbFile = strStripLower(dbFile)
+	dbFile = raw_input("Please enter an input database (name.db): ")
+	dbFile = strStripLower(dbFile)
 
-		# check if file exits
-		if dbFile == "-quit":
-			exit()
+	# check if file exits
+	if dbFile == "-quit":
+		exit()
 
-		if not os.path.isfile(dbFile) or not re.match(".+\\.db", dbFile):
-			print "Invalid filename, please try again!"
-		elif (os.path.isfile(dbFile) and re.match(".+\\.db", dbFile)):
-			return dbFile
-			break
+	if not os.path.isfile(dbFile) or not re.match(".+\\.db", dbFile):
+		print "Invalid filename, please try again!"
+		getDBFile()
+
+	return dbFile
 
 def getConnectionCursor(filename):
 	conn = sqlite3.connect(filename) 
@@ -29,6 +28,10 @@ def getConnectionCursor(filename):
 	conn.row_factory = sqlite3.Row
 	c = conn.cursor()
 	return conn, c
+
+def findClosure(conn, c):
+	print "Finding Closure"
+
 
 def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"
@@ -206,12 +209,6 @@ def findViolatingBCNF (R, F):
 					return FD
 					foundViolatingFD = True
 	return 'no violating'
-
-def dropTable(conn, c, tableName):
-	query = "DROP TABLE IF EXISTS " + tableName + ";"
-	c.execute(query)
-	conn.commit()
-
 
 def createBCNFFDTables(conn, c, F):
 	inputFdTableName = getFDTableName(conn, c)
