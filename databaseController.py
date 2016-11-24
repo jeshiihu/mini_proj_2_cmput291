@@ -35,8 +35,9 @@ def findClosure(conn, c):
 	if attrSet == "-quit":
 		exit()
 	
+	attrSet = attrSet.replace(" ", "")
 	attrSet = strStripUpper(attrSet)
-	
+
 	fdTableName = ""
 	while(1):
 		fdTableName = raw_input("Please enter the FD table name: ")
