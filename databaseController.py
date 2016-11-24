@@ -41,8 +41,6 @@ def findClosure(conn, c):
 	fdTableName = ""
 	while(1):
 		fdTableName = raw_input("Please enter the FD table name: ")
-		fdTableName = fdTableName.strip()
-		fdTableName = fdTableName.replace(" ", "")
 
 		if fdTableName == "-quit":
 			exit()
@@ -57,7 +55,7 @@ def findClosure(conn, c):
 	print attrSet + "+ = " + getClosure(getStringSet(attrSet), fdSet);
 
 def synthesizeTo3NF(conn, c):
-	print "In synthesize 3NF"
+	print "=== Synthesizing 3NF ==="
 
 	# returns a set of (LHS, RHS)
 	minimalCover = computeMinimalCover(conn, c)
@@ -70,6 +68,8 @@ def synthesizeTo3NF(conn, c):
 	inputTableName = getInputTableName(conn, c)
 	outputTableName = inputTableName.replace("Input", "Output") + "_"
 	createRelationalTables(conn, c, newRiDict)
+
+	print "=== Synthesis into 3NF complete! ==="
 
 
 def decomposeToBCNF(conn, c):
