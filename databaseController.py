@@ -65,7 +65,7 @@ def decomposeToBCNF(conn, c):
 	R = ''
 	for attribute in Rsql:
 		R = R + attribute
-	#print(R)
+	print(R)
 
 	getTableColumnAndType(c, Rtable)
 
@@ -82,7 +82,7 @@ def decomposeToBCNF(conn, c):
 			'''
 	c.execute(sqlGetF %Ftable[0])
 	F = c.fetchall()
-	#print(F)
+	print(F)
 
 	BCNFR = []
 	BCNFFD = []
@@ -93,7 +93,7 @@ def decomposeToBCNF(conn, c):
 	if (F1 == 'no violating'):
 		print('already in BCNF')
 		for R in R2:
-			BCNFR.append(R)
+			BCNFR.append(('',R))
 		for FD in F2:
 			BCNFFD.append(FD)
 	else :
@@ -101,7 +101,7 @@ def decomposeToBCNF(conn, c):
 		while (1) :
 			F1 = findViolatingBCNF(R2,F2)
 			if (F1 == 'no violating'):
-				BCNFR.append(R2)
+				BCNFR.append(('',R2))
 				break
 			if not F2:
 				BCNFR.append(R2)
@@ -110,7 +110,7 @@ def decomposeToBCNF(conn, c):
 			LHS = F1[0]
 			RHS = F1[1]
 			R1 = LHS.replace(',','') + RHS.replace(',','')
-			BCNFR.append(R1)
+			BCNFR.append((LHS,R1))
 			BCNFFD.append(F1)
 			for attribute in RHS:
 				if attribute in R:
@@ -134,6 +134,7 @@ def decomposeToBCNF(conn, c):
 	print('My Rs are: ',  BCNFR)
 	print('my Fds are: ', BCNFFD)
 	print(findDependencyPreserving(F, BCNFFD))
+	createBCNFTables(conn, c, BCNFR, BCNFFD)
 
 
 def findDependencyPreserving (F, Fprime):
@@ -205,3 +206,70 @@ def findViolatingBCNF (R, F):
 					return FD
 					foundViolatingFD = True
 	return 'no violating'
+
+def dropTable(conn, c, tableName):
+	query = "DROP TABLE IF EXISTS " + tableName + ";"
+	c.execute(query)
+	conn.commit()
+
+
+def createBCNFFDTables(conn, c, F):
+	inputFdTableName = getFDTableName(conn, c)
+	baseOutputName = inputFdTableName.replace("Input", "Output") + "_"
+
+	for FD in F:
+		# create the output FDs tables
+		Relation = FD[0].replace(',','') + FD[1].replace(',','')
+		fdTableName = baseOutputName + ''.join(Relation)
+		dropTable(conn, c, fdTableName)
+		query = "CREATE TABLE " + fdTableName + " (LHS TEXT, RHS TEXT);"
+		#print(query)
+		c.execute(query)
+		insert = [FD[0], FD[1]] #lhs rhs
+		query = "INSERT INTO " + fdTableName + " VALUES (?,?)"
+		c.execute(query, insert)
+		conn.commit()
+
+def createBCNFRelationalTables(conn, c, R):
+	inputTableName = getInputTableName(conn, c)
+	baseOutputName = inputTableName.replace("Input", "Output") + "_"
+	
+	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (inputTableName, ))
+	result = c.fetchone()
+	tableInfo = getTableColumnAndType(c, result)
+
+	for Relation in R:
+		if (Relation[0] != ''):
+			key = Relation[1]
+			columns = ""
+			tableName = baseOutputName + ''.join(key)
+			for attr in key:
+				columnType = getSpecificColumnType(tableInfo, attr)
+				columns = columns + attr + " " + columnType + ', '
+			primaryKey = Relation[0]
+			columns = columns + "PRIMARY KEY (" + primaryKey + ")"
+			columns = strStripUpper(columns)
+			dropTable(conn, c, tableName)
+			query = "CREATE TABLE " + tableName + "(" + columns + ");"
+			#print(query)
+			c.execute(query)
+			conn.commit()
+
+		else:
+			key = Relation[1]
+			columns = ""
+			tableName = baseOutputName + ''.join(key)
+			for attr in key:
+				columnType = getSpecificColumnType(tableInfo, attr)
+				columns = columns + attr + " " + columnType + ', '
+			columns = strStripUpper(columns)
+			dropTable(conn, c, tableName)
+			query = "CREATE TABLE " + tableName + "(" + columns + ");"
+			c.execute(query)
+			conn.commit()
+
+	conn.commit()
+
+def createBCNFTables(conn, c, R, F): # format is a dict
+	createBCNFRelationalTables(conn, c, R)
+	createBCNFFDTables(conn, c, F)
