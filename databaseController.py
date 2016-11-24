@@ -6,18 +6,18 @@ from helpers import *
 import copy
 
 def getDBFile():
-	dbFile = raw_input("Please enter an input database (name.db): ")
-	dbFile = strStripLower(dbFile)
+	while(1):
+		dbFile = raw_input("Please enter an input database (name.db): ")
+		dbFile = strStripLower(dbFile)
 
-	# check if file exits
-	if dbFile == "-quit":
-		exit()
+		# check if file exits
+		if dbFile == "-quit":
+			exit()
 
-	if not os.path.isfile(dbFile) or not re.match(".+\\.db", dbFile):
-		print "Invalid filename, please try again!"
-		getDBFile()
-
-	return dbFile
+		if not os.path.isfile(dbFile) or not re.match(".+\\.db", dbFile):
+			print "Invalid filename, please try again!"
+		elif (os.path.isfile(dbFile) and re.match(".+\\.db", dbFile)):
+			return dbFile
 
 def getConnectionCursor(filename):
 	conn = sqlite3.connect(filename) 
@@ -31,7 +31,26 @@ def getConnectionCursor(filename):
 
 def findClosure(conn, c):
 	print "Finding Closure"
+	attrSet = raw_input("Please enter attribute set (i.e. A,B): ")
+	if attrSet == "-quit":
+		exit()
+	
+	attrSet = strStripUpper(attrSet)
+	
+	fdTableName = ""
+	while(1):
+		fdTableName = raw_input("Please enter the FD table name: ")
+		if fdTableName == "-quit":
+			exit()
 
+		if not tableExists(conn, c, fdTableName):
+			print "Table does not exist, please try again!"
+			continue
+		else:
+			break
+
+	fdSet = getFDSet(conn, c, fdTableName);
+	print attrSet + "+ = " + getClosure(getStringSet(attrSet), fdSet);
 
 def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"

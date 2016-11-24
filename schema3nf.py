@@ -14,27 +14,6 @@ def makeRHSToSingleAttr(fdSet):
 
 	return tempSet
 
-def getClosure(lhs, fdSet):
-	# working with sets, so no need to worry about duplicates
-	closure = set(lhs) # eg. BH+ = BH
-
-	for fd in fdSet: 
-		tempLHS = getStringSet(fd[0])
-		foundLHS = True
-
-		for c in tempLHS:	# find if we can add the RHS to the closure
-			if c not in closure:
-				foundLHS = False
-				break
-
-		if foundLHS: # we can add it!
-			closure.add(fd[1])
-
-	if(lhs == closure): # we have iterated through the whole thing and cant add anymore!
-		return getCommaString(closure)
-	else:
-		return getClosure(closure, fdSet)
-
 # =================================== # 2. Elimate redundant attribute from LHS ===================================
 def removeLhsRedundantAttr(fdSet):
 	tempSet = set()
