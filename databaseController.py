@@ -41,6 +41,9 @@ def findClosure(conn, c):
 	fdTableName = ""
 	while(1):
 		fdTableName = raw_input("Please enter the FD table name: ")
+		fdTableName = fdTableName.strip()
+		fdTableName = fdTableName.replace(" ", "")
+
 		if fdTableName == "-quit":
 			exit()
 
