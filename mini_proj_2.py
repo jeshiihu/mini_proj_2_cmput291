@@ -18,8 +18,12 @@ def promptAction(conn, c, filename):
 		decomposeToBCNF(conn, c)
 	elif(action == str(2)):
 		findClosure(conn, c)
+		print ""
+		promptAction(conn, c, filename)
 	elif(action == str(3)):
 		print "Kelly function hereeeeee"
+		print ""
+		promptAction(conn, c, filename)
 	elif(action == "-quit"):
 		exit()
 	else:

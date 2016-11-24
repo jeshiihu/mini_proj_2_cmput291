@@ -139,6 +139,31 @@ def dropTable(conn, c, tableName):
 	c.execute(query)
 	conn.commit()
 
+def getClosure(lhs, fdSet):
+	# working with sets, so no need to worry about duplicates
+	closure = set(lhs) # eg. BH+ = BH
+	#if LHS has more than one attribute, comma will be added during set transformation so remove it
+	if ',' in closure:
+		closure.remove(',')
+
+	for fd in fdSet: 
+		tempLHS = getStringSet(fd[0])
+		foundLHS = True
+
+		for c in tempLHS:	# find if we can add the RHS to the closure
+			if c not in closure:
+				foundLHS = False
+				break
+
+		if foundLHS: # we can add it!
+			#split the RHS before adding so the values inside the set are of single attributes 
+			splitRHS=getStringSet(fd[1])
+			closure.update(splitRHS)
+			
+	if(lhs == closure): # we have iterated through the whole thing and cant add anymore!
+		return getCommaString(closure)
+	else:
+		return getClosure(closure, fdSet)
 
 
 
