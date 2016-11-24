@@ -1,66 +1,5 @@
 import sqlite3
-
-def getCommaString(set):
-	string = ""
-	for c in set:
-		string = string + c + ","
-
-	while(1):
-		if string[-1:] == ",":
-			string = string[:-1]
-		else:
-			break
-
-	return string
-
-def getStringSet(string):
-	return string.split(',')
-
-def getInputTableName(conn,c):
-	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'input_%' AND name NOT LIKE 'input_fds_%';")
-	result = c.fetchone()
-
-	if not result:
-		print "Error: could not get Input Table Name"
-		exit()
-
-	return result[0]
-
-def getInputTable(conn, c, tablename):
-	query = 'SELECT * FROM ' + tablename + ';'
-	c.execute(query)
-	results = c.fetchall()
-
-	if not results:
-		print "Error: could not get Input Table Name"
-		exit()
-
-	return results
-
-def getFDTableName(conn, c):
-	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'input_fds_%';")
-	result = c.fetchone()
-
-	if not result:
-		print "Error: could not get Functional Dependancy Table Name"
-		exit()
-
-	return result[0]
-
-def getFDSet(conn, c, tableName):
-	query = 'SELECT * FROM ' + tableName + ';'
-	c.execute(query)
-	results = c.fetchall()
-
-	if not results:
-		print "Error: unable to get data from table " + tableName
-		exit()
-
-	fdSet = set()
-	for r in results:
-		fdSet.add((r['LHS'], r['RHS']))
-
-	return fdSet
+from helpers import *
 
 # =================================== 1. make the RHS of each FD into a single attribute ===================================
 def makeRHSToSingleAttr(fdSet):
@@ -100,9 +39,7 @@ def getClosure(lhs, fdSet):
 def removeLhsRedundantAttr(fdSet):
 	tempSet = set()
 	for fd in fdSet:
-		print "Removing lhs redundancy", fd
 		if ',' in fd[0]: # possible redundancy
-
 			redundantAttr = set()
 			for c in fd[0].split(','):
 				templhs = fd[0].split(',')
@@ -187,24 +124,46 @@ def formSchemaForEachUi(partitionedSet):
 	fdSet = set()
 
 	for fds in partitionedSet:
-		RiList = list() # set of attributes
+		RiSet = set() # set of attributes
 		for fd in fds:
 			for attr in fd: # add all attributes to the Ri
-				if attr not in RiList:
-					RiList.append(attr)
-
-		Ri = ''.join(RiList)
-		Ri = Ri.replace(',', '')
-		newSchema[Ri] = fds # fds is the Ui
+				for c in getStringSet(attr):
+					if c not in RiSet:
+						RiSet.add(c)
+		newSchema[frozenset(RiSet)] = fds # fds is the Ui
 
 	return newSchema
 
-
-def isClosureSuperKey(keys, closure):
-	i = 0
 # ====================== 4. If none of the schemas from step 2 includes a superkey for R, add another relation schema that 
 # ====================== has a key for R
-def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
+def removeLhsSuperKey(keys, fdSet, lhs): #lhs is a set
+	redundantAttr = set()
+
+	for attr in lhs:
+		tempLhs = set(lhs)
+		tempLhs.remove(attr)
+		closure = getClosure(tempLhs, fdSet)
+
+		redundant = True
+		for k in keys:
+			if k not in closure: # then we know its not redundant
+				redundant = False
+				break
+
+		if redundant:
+			redundantAttr.add(attr)
+
+	newLhs = set(lhs)
+	for attr in redundantAttr:
+		newLhs.remove(attr)
+
+	if newLhs == lhs:
+		return lhs
+	else:
+		return removeLhsSuperKey(keys, fdSet, newLhs)
+
+
+def addAdditionalSchemaIfNoSuperKey(conn, c, minimalCover):
 	print "adding additional schema if necessary"
 	tableName = getInputTableName(conn, c)
 	results = getInputTable(conn, c, tableName)
@@ -213,12 +172,7 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 	foundSuperKey = False
 	prevClosure = ""
 	lhsWithMostAttributesInClosure = ""
-
-	#TEST
-	# keys = ['A', 'B', 'C', 'D']
-	# minimalCover = set()
-	# minimalCover.add(('A', 'B'))
-	# minimalCover.add(('C', 'D'))
+	rhs = ""
 
 	for fd in minimalCover:
 		closure = getClosure(fd[0], minimalCover) # this is a comma string
@@ -228,6 +182,7 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 			if attr not in closure:
 				if(len(closure) >= len(prevClosure)): # get the closure that has the most attributes!
 					lhsWithMostAttributesInClosure = fd[0]
+					rhs = fd[1]
 					prevClosure = closure
 
 				allAttrInKeys = False
@@ -242,29 +197,21 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, schema, minimalCover):
 
 	#augmentation
 	closure = getClosure(lhsWithMostAttributesInClosure, minimalCover)
-	print lhsWithMostAttributesInClosure + "+ = " + closure
+	# print lhsWithMostAttributesInClosure + "+ = " + closure
 	lhs = set(getStringSet(lhsWithMostAttributesInClosure))
 
 
-	for fd in minimalCover:
-		fdLhs = getStringSet(fd[0])
+	for attr in keys:
+		if attr not in closure:
+			lhs.add(attr)
 
-		foundSuper = True
-		for attr in fdLhs:
-			if attr not in closure:
-				lhs.add(attr)
-			# after adding check if we got a super key!
-			lhsClosure = getClosure(''.join(lhs), minimalCover)
-			for at in keys:
-				if at not in lhsClosure:
-					foundSuper = False
-
-			if foundSuper:
-				break
-		if foundSuper:
-			break
-	print ''.join(lhs)
-	return ''.join(lhs)
+	# print ''.join(lhs)
+	newLhs = removeLhsSuperKey(keys, minimalCover, lhs)
+	# print ''.join(newLhs)
+	
+	d = dict()
+	d[frozenset(newLhs)] = ""
+	return d
 
 def tableExists(conn, c, tableName):
 	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (tableName,))
@@ -281,10 +228,13 @@ def dropTable(conn, c, tableName):
 	conn.commit()
 
 
-def createFDTables(conn, c, schemaDict, baseOutputName):
+def createFDTables(conn, c, schemaDict):
+	inputFdTableName = getFDTableName(conn, c)
+	baseOutputName = inputFdTableName.replace("Input", "Output") + "_"
+
 	for key in schemaDict:
 		# create the output FDs tables
-		fdTableName = baseOutputName + key
+		fdTableName = baseOutputName + ''.join(key)
 		dropTable(conn, c, fdTableName)
 		query = "CREATE TABLE " + fdTableName + " (LHS TEXT, RHS TEXT);"
 		c.execute(query)
@@ -294,28 +244,35 @@ def createFDTables(conn, c, schemaDict, baseOutputName):
 			c.execute(query, insert)
 		conn.commit()
 
-def createRelationalTables(conn, c, schemaDict, baseOutputName):
+def createRelationalTables(conn, c, schemaDict):
+	inputTableName = getInputTableName(conn, c)
+	baseOutputName = inputTableName.replace("Input", "Output") + "_"
+	
+	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (inputTableName, ))
+	result = c.fetchone()
+	tableInfo = getTableColumnAndType(c, result)
+
 	for key in schemaDict:
-		tableName = baseOutputName + key
+		columns = ""
+		tableName = baseOutputName + ''.join(key)
+		for attr in key:
+			columnType = getSpecificColumnType(tableInfo, attr)
+			columns = columns + attr + " " + columnType + ', '
+
+		if len(schemaDict[key]) > 0: # as long as it has FDs
+			fd = set(schemaDict[key]).pop()
+			columns = columns + "PRIMARY KEY (" + fd[0] + ")"
+		columns = strStripUpper(columns)
 		dropTable(conn, c, tableName)
-		query = "CREATE TABLE " + tableName + " (LHS TEXT, RHS TEXT);"
+		query = "CREATE TABLE " + tableName + "(" + columns + ");"
 		c.execute(query)
+		conn.commit()
+
+	conn.commit()
 
 def createTables(conn, c, schemaDict): # format is a dict
-	inputTableName = getInputTableName(conn, c)
-	outputTableName = inputTableName.replace("Input", "Output") + "_"
-
-	inputFdTableName = getFDTableName(conn, c)
-	outputFdTableName = inputFdTableName.replace("Input", "Output") + "_"
-
-	input = getInputTable(conn, c, inputTableName)
-
-	print "keys", input[0].keys()
-	for i in input:
-		print i
-
-	createRelationalTables(conn, c, schemaDict, outputTableName)
-	createFDTables(conn, c, schemaDict, outputFdTableName)
+	createRelationalTables(conn, c, schemaDict)
+	createFDTables(conn, c, schemaDict)
 
 
 
