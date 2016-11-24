@@ -29,6 +29,10 @@ def getConnectionCursor(filename):
 	c = conn.cursor()
 	return conn, c
 
+def findClosure(conn, c):
+	print "Finding Closure"
+
+
 def synthesizeTo3NF(conn, c):
 	print "In synthesize 3NF"
 
@@ -46,7 +50,7 @@ def synthesizeTo3NF(conn, c):
 
 
 def decomposeToBCNF(conn, c):
-	print "In decompose BCNF"
+	print "decomposing to BCNF"
 	sqlGetRTable = '''
 				SELECT name
 				 FROM sqlite_master 
@@ -68,7 +72,6 @@ def decomposeToBCNF(conn, c):
 
 	getTableColumnAndType(c, Rtable)
 
-	# Ftable = raw_input('please enter name of input table with FD: ')
 	sqlGetFTable = '''
 			SELECT name 
 			FROM sqlite_master 
@@ -88,42 +91,98 @@ def decomposeToBCNF(conn, c):
 	BCNFFD = []
 	F2 = copy.copy(F)
 	R2 = copy.copy(R)
-	while (1) :
-		F1 = findViolatingBCNF(R2,F2)
-		if (F1 == 'no violating'):
-			BCNFR.append(R2)
-			break
-		if not F2:
-			BCNFR.append(R2)
-			break
 
-		LHS = F1[0]
-		RHS = F1[1]
-		R1 = LHS.replace(',','') + RHS.replace(',','')
-		BCNFR.append(R1)
-		BCNFFD.append(F1)
-		for attribute in RHS:
-			if attribute in R:
-				R2 = R2.replace(attribute, '')
-		F2.remove(F1)
+	F1 = findViolatingBCNF(R2,F2)
+	if (F1 == 'no violating'):
+		print('already in BCNF')
+		for R in R2:
+			BCNFR.append(('',R))
 		for FD in F2:
-			FDLHS = FD[0].replace(',','') 
-			FDRHS = FD[1].replace(',', '')
-			for RHSattribute in RHS:
-				if (RHSattribute in FDLHS):
-					F2.remove(FD)
-					break
-				if(RHSattribute in FDRHS):
-					index = F2.index(FD)
-					F2.remove(FD)
-					if (FD[1].replace(RHSattribute,'') == ''):
+			BCNFFD.append(FD)
+	else :
+		print('Not in BCNF')
+		while (1) :
+			F1 = findViolatingBCNF(R2,F2)
+			if (F1 == 'no violating'):
+				BCNFR.append(('',R2))
+				break
+			if not F2:
+				BCNFR.append(R2)
+				break
+
+			LHS = F1[0]
+			RHS = F1[1]
+			R1 = LHS.replace(',','') + RHS.replace(',','')
+			BCNFR.append((LHS,R1))
+			BCNFFD.append(F1)
+			for attribute in RHS:
+				if attribute in R:
+					R2 = R2.replace(attribute, '')
+			F2.remove(F1)
+			for FD in F2:
+				FDLHS = FD[0].replace(',','') 
+				FDRHS = FD[1].replace(',', '')
+				for RHSattribute in RHS:
+					if (RHSattribute in FDLHS):
+						F2.remove(FD)
 						break
-					else:
-						F2.insert(index, (FD[0], FD[1].replace(RHSattribute,'')))
+					if(RHSattribute in FDRHS):
+						index = F2.index(FD)
+						F2.remove(FD)
+						if (FD[1].replace(RHSattribute,'') == ''):
+							break
+						else:
+							F2.insert(index, (FD[0], FD[1].replace(RHSattribute,'')))
 	print('******************************************************************************************')
 	print('My Rs are: ',  BCNFR)
 	print('my Fds are: ', BCNFFD)
+	print(findDependencyPreserving(F, BCNFFD))
+	createBCNFTables(conn, c, BCNFR, BCNFFD)
 
+
+def findDependencyPreserving (F, Fprime):
+	if(all(FD in Fprime for FD in F)):
+		return 'is dependency preserving'
+	allClosures = findAllClosures(Fprime)
+	preserved = True
+	for FD in F:
+		LHSFD = FD[0].replace(',', '')
+		RHSFD = FD[1].replace(',', '')
+		for FDprime in Fprime:
+			LHSFDprime = FDprime[0]
+			RHSFDprime = FDprime[1]
+			if((LHSFD == LHSFDprime) and (all(attribute in RHSFDprime for attribute in RHSFD))):
+				break
+			preserved = False
+	if (preserved == False):
+		return 'is NOT dependency preserving'
+	return 'is dependency preserving'
+	
+
+def findAllClosures(F):
+	allClosures = []
+	for FD in F:
+		LHS = FD[0]
+		enclosure = LHS.replace(',', '')
+		RHS = FD[1]
+		otherF = copy.copy(F)
+		otherF.remove(FD)
+		closure = (LHS + RHS).replace(',','')
+		foundViolatingFD = False;
+		while (foundViolatingFD == False):
+			old = closure
+			for otherFD in otherF:
+				otherFDLHS = otherFD[0].replace(',', '')
+				if(all(attribute in closure for attribute in otherFDLHS)):
+					otherFDRHS = otherFD[1].replace(',', '')
+					for addAttribute in otherFDRHS:
+						for attribute in addAttribute:
+							if (attribute not in closure):
+								closure = closure + attribute
+			if (old == closure):
+				break
+		allClosures.append((enclosure, closure))
+	return allClosures
 
 def findViolatingBCNF (R, F):
 	for FD in F:
@@ -150,3 +209,64 @@ def findViolatingBCNF (R, F):
 					return FD
 					foundViolatingFD = True
 	return 'no violating'
+
+def createBCNFFDTables(conn, c, F):
+	inputFdTableName = getFDTableName(conn, c)
+	baseOutputName = inputFdTableName.replace("Input", "Output") + "_"
+
+	for FD in F:
+		# create the output FDs tables
+		Relation = FD[0].replace(',','') + FD[1].replace(',','')
+		fdTableName = baseOutputName + ''.join(Relation)
+		dropTable(conn, c, fdTableName)
+		query = "CREATE TABLE " + fdTableName + " (LHS TEXT, RHS TEXT);"
+		#print(query)
+		c.execute(query)
+		insert = [FD[0], FD[1]] #lhs rhs
+		query = "INSERT INTO " + fdTableName + " VALUES (?,?)"
+		c.execute(query, insert)
+		conn.commit()
+
+def createBCNFRelationalTables(conn, c, R):
+	inputTableName = getInputTableName(conn, c)
+	baseOutputName = inputTableName.replace("Input", "Output") + "_"
+	
+	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (inputTableName, ))
+	result = c.fetchone()
+	tableInfo = getTableColumnAndType(c, result)
+
+	for Relation in R:
+		if (Relation[0] != ''):
+			key = Relation[1]
+			columns = ""
+			tableName = baseOutputName + ''.join(key)
+			for attr in key:
+				columnType = getSpecificColumnType(tableInfo, attr)
+				columns = columns + attr + " " + columnType + ', '
+			primaryKey = Relation[0]
+			columns = columns + "PRIMARY KEY (" + primaryKey + ")"
+			columns = strStripUpper(columns)
+			dropTable(conn, c, tableName)
+			query = "CREATE TABLE " + tableName + "(" + columns + ");"
+			#print(query)
+			c.execute(query)
+			conn.commit()
+
+		else:
+			key = Relation[1]
+			columns = ""
+			tableName = baseOutputName + ''.join(key)
+			for attr in key:
+				columnType = getSpecificColumnType(tableInfo, attr)
+				columns = columns + attr + " " + columnType + ', '
+			columns = strStripUpper(columns)
+			dropTable(conn, c, tableName)
+			query = "CREATE TABLE " + tableName + "(" + columns + ");"
+			c.execute(query)
+			conn.commit()
+
+	conn.commit()
+
+def createBCNFTables(conn, c, R, F): # format is a dict
+	createBCNFRelationalTables(conn, c, R)
+	createBCNFFDTables(conn, c, F)

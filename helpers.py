@@ -125,6 +125,19 @@ def getSpecificColumnType(allColumns, column):
 			return singleColumnType[1]
 
 
+def tableExists(conn, c, tableName):
+	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (tableName,))
+	result = c.fetchone()
+
+	if not result:
+		return False
+
+	return True
+
+def dropTable(conn, c, tableName):
+	query = "DROP TABLE IF EXISTS " + tableName + ";"
+	c.execute(query)
+	conn.commit()
 
 
 

@@ -213,21 +213,6 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, minimalCover):
 	d[frozenset(newLhs)] = ""
 	return d
 
-def tableExists(conn, c, tableName):
-	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (tableName,))
-	result = c.fetchone()
-
-	if not result:
-		return False
-
-	return True
-
-def dropTable(conn, c, tableName):
-	query = "DROP TABLE IF EXISTS " + tableName + ";"
-	c.execute(query)
-	conn.commit()
-
-
 def createFDTables(conn, c, schemaDict):
 	inputFdTableName = getFDTableName(conn, c)
 	baseOutputName = inputFdTableName.replace("Input", "Output") + "_"
