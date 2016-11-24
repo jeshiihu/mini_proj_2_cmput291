@@ -1,53 +1,61 @@
-from schema3nf import *
 from helpers import *
 
 def checkEquivalence(F,G):
+	#check if F is contained inside G 
 	FG = 0
 	for f in F:
+		#check if each FD of F is entailed by G via calculating attribute closure
 		ac=getClosure(f[0],G)
 		ac = getStringSet(ac)
-		#print(str(f[0])+','+str(ac))
+
 		containsRHS = 0
-		for i in f[1]:
+		#when checking if RHS is inside the resulting attribute closure, check each element individually
+		for i in getStringSet(f[1]):
 			if i not in ac:
 				containsRHS+=1
 		if containsRHS!=0:
 			FG+=1
 
-
 	GF = 0
 	for g in G:
 		ac=getClosure(g[0],F)
 		ac = getStringSet(ac)
-		print(str(g[0])+','+str(ac))
-
 		hasRHS = 0
-		for i in g[1]:
+		for i in getStringSet(g[1]):
 			if i not in ac:
 				hasRHS+=1
 		if hasRHS!=0:
 			GF+=1
 
-	print(FG)
-	print(GF)	
 
 	if FG==0 and GF==0:
 		return True
 	else:
 		return False		
-	
 
 
-	
+def getClosure(lhs, fdSet):
+	# working with sets, so no need to worry about duplicates
+	closure = set(lhs) # eg. BH+ = BH
+	#if LHS has more than one attribute, comma will be added during set transformation so remove it
+	if ',' in closure:
+		closure.remove(',')
 
+	for fd in fdSet: 
+		tempLHS = getStringSet(fd[0])
+		foundLHS = True
 
-def main():
-	F = set([('A','C'),("A,C",'D'),('E','A,D'),('E','F')])
-	G = set([('A',"C,D"),('E',"A,D,F")])
+		for c in tempLHS:	# find if we can add the RHS to the closure
+			if c not in closure:
+				foundLHS = False
+				break
 
-	test = checkEquivalence(F,G)
-	print(test)
-
-
-
-main()
+		if foundLHS: # we can add it!
+			#split the RHS before adding so the values inside the set are of single attributes 
+			splitRHS=getStringSet(fd[1])
+			closure.update(splitRHS)
+		print('after add',fd,closure)
+	if(lhs == closure): # we have iterated through the whole thing and cant add anymore!
+		return getCommaString(closure)
+	else:
+		return getClosure(closure, fdSet)
