@@ -33,7 +33,7 @@ def decomposeInstance(conn,C):
 	for s in outputSchemas:
 		x,y,z= s.split('_')
 		z = set(z)
-		#print("Schema",s,z)
+		print("Schema",s,z)
 		queryGetData= "SELECT " + getCommaString(z) + " FROM " + inputTable + ";"
 		C.execute(queryGetData)
 		values = C.fetchall()
@@ -41,20 +41,22 @@ def decomposeInstance(conn,C):
 		
 		#for each row from the input table, add it to the output schema
 		for v in values:
+			cur = conn.cursor()
 			questionMarks =  "?" * len(v)
 			questionMarks = list(questionMarks)
 			questionMarks = getCommaString(questionMarks)
 			temp = list(v)
-			#print("V",temp)
-			#print(questionMarks)
+			print("V",temp)
+			print(questionMarks)
 
 			query = "INSERT INTO " + s + " VALUES " + "("+ questionMarks +")"
-			C.execute(query,temp)
+			cur.execute(query,temp)
+			conn.commit()
 
-#def main():
-#	conn,c=getConnectionCursor('MiniProject2-InputOutputExampleBCNF.db')
-#	getOutputSchemas(conn,c)
-#	decomposeInstance(conn,c)
+def main():
+	conn,c=getConnectionCursor('MiniProject2-InputOutputExampleBCNF.db')
+	getOutputSchemas(conn,c)
+	decomposeInstance(conn,c)
 
 	
-#main()
+main()
