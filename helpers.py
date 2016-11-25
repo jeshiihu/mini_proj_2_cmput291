@@ -126,7 +126,10 @@ def getSpecificColumnType(allColumns, column):
 
 
 def tableExists(conn, c, tableName):
-	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (tableName,))
+	tableName = strStripLower(tableName)
+	tableName = tableName.replace(" ", "")
+	query = "SELECT * FROM " + tableName + ";"
+	c.execute(query)
 	result = c.fetchone()
 
 	if not result:
