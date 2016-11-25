@@ -4,6 +4,7 @@ import sqlite3
 from schema3nf import *
 from helpers import *
 import copy
+from copy import deepcopy
 
 def getDBFile():
 	while(1):
@@ -35,11 +36,13 @@ def findClosure(conn, c):
 	if attrSet == "-quit":
 		exit()
 	
+	attrSet = attrSet.replace(" ", "")
 	attrSet = strStripUpper(attrSet)
-	
+
 	fdTableName = ""
 	while(1):
 		fdTableName = raw_input("Please enter the FD table name: ")
+
 		if fdTableName == "-quit":
 			exit()
 
@@ -53,7 +56,7 @@ def findClosure(conn, c):
 	print attrSet + "+ = " + getClosure(getStringSet(attrSet), fdSet);
 
 def synthesizeTo3NF(conn, c):
-	print "In synthesize 3NF"
+	print "=== Synthesizing 3NF ==="
 
 	# returns a set of (LHS, RHS)
 	minimalCover = computeMinimalCover(conn, c)
@@ -66,6 +69,8 @@ def synthesizeTo3NF(conn, c):
 	inputTableName = getInputTableName(conn, c)
 	outputTableName = inputTableName.replace("Input", "Output") + "_"
 	createRelationalTables(conn, c, newRiDict)
+
+	print "=== Synthesis into 3NF complete! ==="
 
 
 def decomposeToBCNF(conn, c):
@@ -130,7 +135,7 @@ def decomposeToBCNF(conn, c):
 				break
 
 			LHS = F1[0]
-			RHS = F1[1]
+			RHS = F1[1].replace(',', '')
 			R1 = LHS.replace(',','') + RHS.replace(',','')
 			BCNFR.append((LHS,R1))
 			BCNFFD.append(F1)
@@ -139,19 +144,22 @@ def decomposeToBCNF(conn, c):
 					R2 = R2.replace(attribute, '')
 			F2.remove(F1)
 			for FD in F2:
-				FDLHS = FD[0].replace(',','') 
-				FDRHS = FD[1].replace(',', '')
+				index = F2.index(FD)
+				FDcopy = list(FD)
+				FDLHS = FDcopy[0].replace(',','') 
+				FDRHS = FDcopy[1].replace(',', '')
 				for RHSattribute in RHS:
 					if (RHSattribute in FDLHS):
 						F2.remove(FD)
 						break
 					if(RHSattribute in FDRHS):
-						index = F2.index(FD)
-						F2.remove(FD)
-						if (FD[1].replace(RHSattribute,'') == ''):
+						del F2[index]
+						FDcopy[1] = FDcopy[1].replace(RHSattribute, '')
+						if (FDcopy[1].replace(RHSattribute,'') == ''):
 							break
 						else:
-							F2.insert(index, (FD[0], FD[1].replace(RHSattribute,'')))
+							F2.insert(index, (FDcopy[0], FDcopy[1].replace(RHSattribute,'')))
+
 	print('******************************************************************************************')
 	print('My Rs are: ',  BCNFR)
 	print('my Fds are: ', BCNFFD)
@@ -163,19 +171,41 @@ def findDependencyPreserving (F, Fprime):
 	if(all(FD in Fprime for FD in F)):
 		return 'is dependency preserving'
 	allClosures = findAllClosures(Fprime)
+	allOgClosures = findAllClosures(F)
 	preserved = True
 	for FD in F:
+		status = False
 		LHSFD = FD[0].replace(',', '')
 		RHSFD = FD[1].replace(',', '')
-		for FDprime in Fprime:
-			LHSFDprime = FDprime[0]
-			RHSFDprime = FDprime[1]
+		for FDprime in allClosures:
+			LHSFDprime = FDprime[0].replace(',', '')
+			RHSFDprime = FDprime[1].replace(',', '')
 			if((LHSFD == LHSFDprime) and (all(attribute in RHSFDprime for attribute in RHSFD))):
+				status = True
 				break
+		if (status == False):
 			preserved = False
-	if (preserved == False):
-		return 'is NOT dependency preserving'
-	return 'is dependency preserving'
+			return 'is NOT dependency preserving'
+	if (preserved == True):
+		return 'is dependency preserving'
+	# preserved = True
+	# for FDprime in Fprime:
+	# 	status = False	
+	# 	LHSFDprime = FDprime[0].replace(',', '')
+	# 	RHSFDprime = FDprime[1].replace(',', '')
+	# 	for FD in allOgClosures:
+	# 		LHSFD = FD[0].replace(',', '')
+	# 		RHSFD = FD[1].replace(',', '')
+	# 		print(FD)
+	# 		print(FDprime)
+	# 		if((LHSFDprime == LHSFD) and (all(attribute in RHSFD for attribute in RHSFDprime))):
+	# 			status = True
+	# 			break
+	# 	if (status == False):
+	# 		preserved = False
+	# 		return 'is NOT dependency preserving'
+	# if (preserved == True):
+	# 	return 'is dependency preserving'
 	
 
 def findAllClosures(F):
@@ -267,7 +297,6 @@ def createBCNFRelationalTables(conn, c, R):
 			columns = strStripUpper(columns)
 			dropTable(conn, c, tableName)
 			query = "CREATE TABLE " + tableName + "(" + columns + ");"
-			#print(query)
 			c.execute(query)
 			conn.commit()
 
