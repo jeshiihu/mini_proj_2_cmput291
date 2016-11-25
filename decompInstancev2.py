@@ -40,6 +40,7 @@ def decomposeInstance(conn,C):
 		queryGetData= "SELECT " + getCommaString(z) + " FROM " + inputTable + ";"
 		C.execute(queryGetData)
 		values = C.fetchall()
+		values = set(values)
 		
 		for v in values:
 			questionMarks =  "?" * len(v)
