@@ -21,10 +21,6 @@ def getOutputSchemas(conn,c):
 	return extractTitles
 
 def decomposeInstance(conn,C):
-	#the output tables already exist inside the db, regardless of whether they are 3nf or bcnf
-	#simply take the instance data from  input_[name] and organize them among the decomposed output schemas
-	# the tables/schemas already exist, just need to find the correct columns - inside the schema name- and use sql to 
-	#extract and insert the corresponding values
 
 	outputSchemas = getOutputSchemas(conn,C)
 	print("OutputSchemas:",outputSchemas)
@@ -33,29 +29,32 @@ def decomposeInstance(conn,C):
 	inputTable = C.fetchone()
 	inputTable = inputTable[0]
 
+	#for each output schema, grab its data from the input table according to its attributes
 	for s in outputSchemas:
 		x,y,z= s.split('_')
 		z = set(z)
-		print("Schema",s,z)
+		#print("Schema",s,z)
 		queryGetData= "SELECT " + getCommaString(z) + " FROM " + inputTable + ";"
 		C.execute(queryGetData)
 		values = C.fetchall()
+		values = set(values) #trying to bypass key constraints by preventing duplicates
 		
+		#for each row from the input table, add it to the output schema
 		for v in values:
 			questionMarks =  "?" * len(v)
 			questionMarks = list(questionMarks)
 			questionMarks = getCommaString(questionMarks)
 			temp = list(v)
-			print("V",temp)
-			print(questionMarks)
+			#print("V",temp)
+			#print(questionMarks)
 
 			query = "INSERT INTO " + s + " VALUES " + "("+ questionMarks +")"
 			C.execute(query,temp)
 
-def main():
-	conn,c=getConnectionCursor('MiniProject2-InputOutputExampleBCNF.db')
-	getOutputSchemas(conn,c)
-	decomposeInstance(conn,c)
+#def main():
+#	conn,c=getConnectionCursor('MiniProject2-InputOutputExampleBCNF.db')
+#	getOutputSchemas(conn,c)
+#	decomposeInstance(conn,c)
 
 	
-main()
+#main()
