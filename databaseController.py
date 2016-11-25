@@ -3,6 +3,7 @@ import re
 import sqlite3
 from schema3nf import *
 from helpers import *
+from equivalence import *
 import copy
 from copy import deepcopy
 
@@ -318,3 +319,49 @@ def createBCNFRelationalTables(conn, c, R):
 def createBCNFTables(conn, c, R, F): # format is a dict
 	createBCNFRelationalTables(conn, c, R)
 	createBCNFFDTables(conn, c, F)
+
+
+def equivalence(conn,c):
+	F1names = raw_input("FD tables for F1? (comma seperated) \n")
+	if F1names == "-quit":
+		exit()
+
+	F2names = raw_input("FD tables for F2? (comma seperated) \n")
+	if F2names == "-quit":
+		exit()
+
+	F1names = F1names.strip().split(',')
+	F2names = F2names.strip().split(',')
+
+	print("F1NAMES",F1names)
+	print("F2Names",F2names)
+
+
+	F1=set()
+	F2=set()
+
+
+	for fdTable in F1names:
+		query = "SELECT * FROM " + fdTable 
+		c.execute(query)
+		result = c.fetchall()
+		print(result)
+
+		for r in result:
+			F1.update(result)
+
+	for fdTable in F2names:
+		query = "SELECT * FROM " + fdTable 
+		c.execute(query)
+		result = c.fetchall()
+		print(result)
+
+		for r in result:
+			F2.update(result)
+		
+	print('F1',F1)
+	print('F2',F2)
+	print(checkEquivalence(F1,F2))
+
+
+

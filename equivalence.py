@@ -54,7 +54,7 @@ def getClosure(lhs, fdSet):
 			#split the RHS before adding so the values inside the set are of single attributes 
 			splitRHS=getStringSet(fd[1])
 			closure.update(splitRHS)
-		print('after add',fd,closure)
+		#print('after add',fd,closure)
 	if(lhs == closure): # we have iterated through the whole thing and cant add anymore!
 		return getCommaString(closure)
 	else:

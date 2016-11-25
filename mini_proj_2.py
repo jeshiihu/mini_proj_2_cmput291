@@ -21,7 +21,7 @@ def promptAction(conn, c, filename):
 		print ""
 		promptAction(conn, c, filename)
 	elif(action == str(3)):
-		print "Kelly function hereeeeee"
+		equivalence(conn,c)
 		print ""
 		promptAction(conn, c, filename)
 	elif(action == "-quit"):
