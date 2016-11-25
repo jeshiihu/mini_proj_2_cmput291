@@ -14,27 +14,6 @@ def makeRHSToSingleAttr(fdSet):
 
 	return tempSet
 
-def getClosure(lhs, fdSet):
-	# working with sets, so no need to worry about duplicates
-	closure = set(lhs) # eg. BH+ = BH
-
-	for fd in fdSet: 
-		tempLHS = getStringSet(fd[0])
-		foundLHS = True
-
-		for c in tempLHS:	# find if we can add the RHS to the closure
-			if c not in closure:
-				foundLHS = False
-				break
-
-		if foundLHS: # we can add it!
-			closure.add(fd[1])
-
-	if(lhs == closure): # we have iterated through the whole thing and cant add anymore!
-		return getCommaString(closure)
-	else:
-		return getClosure(closure, fdSet)
-
 # =================================== # 2. Elimate redundant attribute from LHS ===================================
 def removeLhsRedundantAttr(fdSet):
 	tempSet = set()
@@ -82,7 +61,7 @@ def removeRedundantFds(fdSet):
 
 # ====================== 1. Compute Fm, the minimal cover for F
 def computeMinimalCover(conn, c):
-	print "Computing minimal cover"
+	print "...computing minimal cover"
 
 	# select the FDs table
 	fdTableName = getFDTableName(conn, c)
@@ -100,7 +79,7 @@ def computeMinimalCover(conn, c):
 
 # ====================== 2. Partition U into sets U1, U2, ... Un such that the LHS of all elements of Ui are the same.
 def partitionSetToSameLHS(minimalCover):
-	print "partition to same LHS"
+	print "...partitioning U into sets of the same LHS"
 	newFD = set()
 	for fd in minimalCover:
 		singleFDSet = set()
@@ -119,7 +98,7 @@ def partitionSetToSameLHS(minimalCover):
 # ====================== 3. For each Ui form schema Ri = (Ri, Ui), where Ri is the set of all attributes mentioned in Ui,
 # ====================== each FD of U will be in some Ri. Hence the decomposition is dependency preserving.
 def formSchemaForEachUi(partitionedSet):
-	print "forming schema for each UI"
+	print "...forming schema for each Ui"
 	newSchema = dict()
 	fdSet = set()
 
@@ -164,7 +143,7 @@ def removeLhsSuperKey(keys, fdSet, lhs): #lhs is a set
 
 
 def addAdditionalSchemaIfNoSuperKey(conn, c, minimalCover):
-	print "adding additional schema if necessary"
+	print "...adding additional schema for superkey if necessary"
 	tableName = getInputTableName(conn, c)
 	results = getInputTable(conn, c, tableName)
 	keys = results[0].keys()
@@ -212,21 +191,6 @@ def addAdditionalSchemaIfNoSuperKey(conn, c, minimalCover):
 	d = dict()
 	d[frozenset(newLhs)] = ""
 	return d
-
-def tableExists(conn, c, tableName):
-	c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?;", (tableName,))
-	result = c.fetchone()
-
-	if not result:
-		return False
-
-	return True
-
-def dropTable(conn, c, tableName):
-	query = "DROP TABLE IF EXISTS " + tableName + ";"
-	c.execute(query)
-	conn.commit()
-
 
 def createFDTables(conn, c, schemaDict):
 	inputFdTableName = getFDTableName(conn, c)

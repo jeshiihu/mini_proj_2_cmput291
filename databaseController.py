@@ -19,7 +19,6 @@ def getDBFile():
 			print "Invalid filename, please try again!"
 		elif (os.path.isfile(dbFile) and re.match(".+\\.db", dbFile)):
 			return dbFile
-			break
 
 def getConnectionCursor(filename):
 	conn = sqlite3.connect(filename) 
@@ -31,8 +30,33 @@ def getConnectionCursor(filename):
 	c = conn.cursor()
 	return conn, c
 
+def findClosure(conn, c):
+	print "Finding Closure"
+	attrSet = raw_input("Please enter attribute set (i.e. A,B): ")
+	if attrSet == "-quit":
+		exit()
+	
+	attrSet = attrSet.replace(" ", "")
+	attrSet = strStripUpper(attrSet)
+
+	fdTableName = ""
+	while(1):
+		fdTableName = raw_input("Please enter the FD table name: ")
+
+		if fdTableName == "-quit":
+			exit()
+
+		if not tableExists(conn, c, fdTableName):
+			print "Table does not exist, please try again!"
+			continue
+		else:
+			break
+
+	fdSet = getFDSet(conn, c, fdTableName);
+	print attrSet + "+ = " + getClosure(getStringSet(attrSet), fdSet);
+
 def synthesizeTo3NF(conn, c):
-	print "In synthesize 3NF"
+	print "=== Synthesizing 3NF ==="
 
 	# returns a set of (LHS, RHS)
 	minimalCover = computeMinimalCover(conn, c)
@@ -45,6 +69,8 @@ def synthesizeTo3NF(conn, c):
 	inputTableName = getInputTableName(conn, c)
 	outputTableName = inputTableName.replace("Input", "Output") + "_"
 	createRelationalTables(conn, c, newRiDict)
+
+	print "=== Synthesis into 3NF complete! ==="
 
 
 def decomposeToBCNF(conn, c):
@@ -232,12 +258,6 @@ def findViolatingBCNF (R, F):
 					return FD
 					foundViolatingFD = True
 	return 'no violating'
-
-def dropTable(conn, c, tableName):
-	query = "DROP TABLE IF EXISTS " + tableName + ";"
-	c.execute(query)
-	conn.commit()
-
 
 def createBCNFFDTables(conn, c, F):
 	inputFdTableName = getFDTableName(conn, c)

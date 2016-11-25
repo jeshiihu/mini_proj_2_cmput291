@@ -7,6 +7,8 @@ def promptAction(conn, c, filename):
 	print "Please select an action you wish to perform..."
 	print "	[0] Synthesize table to 3NF"
 	print "	[1] Decompose table to BCNF"
+	print "	[2] Compute attribute closure"
+	print "	[3] Check if two FD Sets are equivalent"
 	print "	[-quit] Quit program"
 	action = raw_input("action: ")
 
@@ -14,6 +16,14 @@ def promptAction(conn, c, filename):
 		synthesizeTo3NF(conn, c)
 	elif(action == str(1)):
 		decomposeToBCNF(conn, c)
+	elif(action == str(2)):
+		findClosure(conn, c)
+		print ""
+		promptAction(conn, c, filename)
+	elif(action == str(3)):
+		print "Kelly function hereeeeee"
+		print ""
+		promptAction(conn, c, filename)
 	elif(action == "-quit"):
 		exit()
 	else:
