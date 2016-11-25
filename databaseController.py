@@ -11,7 +11,8 @@ from decompInstancev2 import *
 def getDBFile():
 	while(1):
 		dbFile = raw_input("Please enter an input database (name.db): ")
-		dbFile = strStripLower(dbFile)
+		dbFile = dbFile.strip()
+		dbFile = dbFile.replace(" ", "")
 
 		# check if file exits
 		if dbFile == "-quit":
@@ -190,25 +191,6 @@ def findDependencyPreserving (F, Fprime):
 			return 'is NOT dependency preserving'
 	if (preserved == True):
 		return 'is dependency preserving'
-	# preserved = True
-	# for FDprime in Fprime:
-	# 	status = False	
-	# 	LHSFDprime = FDprime[0].replace(',', '')
-	# 	RHSFDprime = FDprime[1].replace(',', '')
-	# 	for FD in allOgClosures:
-	# 		LHSFD = FD[0].replace(',', '')
-	# 		RHSFD = FD[1].replace(',', '')
-	# 		print(FD)
-	# 		print(FDprime)
-	# 		if((LHSFDprime == LHSFD) and (all(attribute in RHSFD for attribute in RHSFDprime))):
-	# 			status = True
-	# 			break
-	# 	if (status == False):
-	# 		preserved = False
-	# 		return 'is NOT dependency preserving'
-	# if (preserved == True):
-	# 	return 'is dependency preserving'
-	
 
 def findAllClosures(F):
 	allClosures = []

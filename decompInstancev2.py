@@ -23,7 +23,7 @@ def getOutputSchemas(conn,c):
 def decomposeInstance(conn,C):
 
 	outputSchemas = getOutputSchemas(conn,C)
-	print("OutputSchemas:",outputSchemas)
+	#print("OutputSchemas:",outputSchemas)
 
 	C.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'input_%' AND name NOT LIKE 'input_fds%';")
 	inputTable = C.fetchone()
@@ -32,8 +32,8 @@ def decomposeInstance(conn,C):
 	#for each output schema, grab its data from the input table according to its attributes
 	for s in outputSchemas:
 		x,y,z= s.split('_')
-		z = set(z)
-		print("Schema",s,z)
+		z = list(z)
+		#print("Schema",s,z)
 		queryGetData= "SELECT " + getCommaString(z) + " FROM " + inputTable + ";"
 		C.execute(queryGetData)
 		values = C.fetchall()
@@ -46,13 +46,14 @@ def decomposeInstance(conn,C):
 			questionMarks = list(questionMarks)
 			questionMarks = getCommaString(questionMarks)
 			temp = list(v)
-			print("V",temp)
+			#print("V",temp)
 			#print(questionMarks)
 
 			query = "INSERT INTO " + s + " VALUES " + "("+ questionMarks +")"
 			cur.execute(query,temp)
 			conn.commit()
-
+	
+	print "Decomposition is complete!"
 # def main():
 # 	conn,c=getConnectionCursor('MiniProject2-InputOutputExample3NF.db')
 # 	getOutputSchemas(conn,c)

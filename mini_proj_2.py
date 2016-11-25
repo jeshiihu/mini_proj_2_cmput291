@@ -9,7 +9,7 @@ def promptAction(conn, c, filename):
 	print "	[1] Decompose table to BCNF"
 	print "	[2] Compute attribute closure"
 	print "	[3] Check if two FD Sets are equivalent"
-	# print "	[4] Decompose Original Table Instance (after 3NF or BCNF)"
+	print "	[4] Reconnect to a database"
 	print "	[-quit] Quit program"
 	action = raw_input("action: ")
 
@@ -27,6 +27,10 @@ def promptAction(conn, c, filename):
 	elif(action == str(3)):
 		equivalence(conn,c)
 		print ""
+	elif(action == str(4)):
+		filename = getDBFile()
+		conn, c = getConnectionCursor(filename)
+		promptAction(conn, c, filename)
 	elif(action == "-quit"):
 		exit()
 	else:
