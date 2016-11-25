@@ -6,6 +6,7 @@ from helpers import *
 from equivalence import *
 import copy
 from copy import deepcopy
+from decompInstancev2 import *
 
 def getDBFile():
 	while(1):
@@ -362,6 +363,24 @@ def equivalence(conn,c):
 	print('F1',F1)
 	print('F2',F2)
 	print(checkEquivalence(F1,F2))
+
+
+def promptForDecomposeInstance(conn, c):
+	input = raw_input("Would you like to decompose the original instance into the new output tables [y/n]? ")
+	input = strStripLower(input)
+	if input == "-quit":
+		exit()
+
+
+	if input == 'y':
+		decomposeInstance(conn, c)
+	elif input == 'n':
+		return
+	else:
+		print "Invalid input, please try again"
+		promptForDecomposeInstance(conn, c)
+		 
+
 
 
 

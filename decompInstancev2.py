@@ -53,10 +53,10 @@ def decomposeInstance(conn,C):
 			cur.execute(query,temp)
 			conn.commit()
 
-def main():
-	conn,c=getConnectionCursor('MiniProject2-InputOutputExample3NF.db')
-	getOutputSchemas(conn,c)
-	decomposeInstance(conn,c)
+# def main():
+# 	conn,c=getConnectionCursor('MiniProject2-InputOutputExample3NF.db')
+# 	getOutputSchemas(conn,c)
+# 	decomposeInstance(conn,c)
 
 	
-main()
+# main()
